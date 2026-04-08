@@ -1,97 +1,64 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Welcome to NQ"
+description: "NQ — Next in Queue. A self-hosted media recommendation system that unifies your movies, TV, games, books, and music into one personalized queue."
 ---
 
-## Setting up
+NQ aggregates your media consumption across Spotify, Steam, YouTube, Apple Music, and more, then uses a graph database to surface personalized "next in queue" recommendations. Run it yourself — all your data stays on your own infrastructure.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get NQ running locally in under 30 minutes with the backend and mobile app.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Installation Guide" icon="download" href="/installation">
+    Step-by-step instructions for installing Go, Node.js, and Neo4j.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Connect Services" icon="plug" href="/guides/connecting-services">
+    Link your Spotify, Steam, YouTube, Apple Music, and other accounts.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore the full GraphQL API — queries, mutations, and data models.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What NQ does
 
-Everything you need to create world-class documentation.
+NQ pulls together your activity from the services you already use — what you've watched, played, listened to, and read — and builds a graph of your media preferences. From that graph, it calculates personalized recommendations for what to consume next.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+<CardGroup cols={3}>
+  <Card title="Movies & TV" icon="film" href="/integrations/video">
+    Track via TMDB with full cast, crew, and genre metadata.
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
+  <Card title="Music" icon="music" href="/integrations/music">
+    Sync from Spotify, Apple Music, and YouTube Music.
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
+  <Card title="Games" icon="gamepad" href="/integrations/gaming">
+    Import your Steam library and Twitch activity via IGDB.
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
+  <Card title="Books" icon="book" href="/integrations/books-articles">
+    Enrich titles via Open Library with ISBN lookups.
   </Card>
-</Columns>
+  <Card title="Articles" icon="newspaper" href="/integrations/books-articles">
+    Import your Instapaper reading list and reading progress.
+  </Card>
+  <Card title="Friends" icon="users" href="/guides/using-the-app">
+    See what friends are watching, playing, and listening to.
+  </Card>
+</CardGroup>
 
-## Need inspiration?
+## Get started in three steps
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Steps>
+  <Step title="Install prerequisites">
+    Install Go 1.19+, Node.js 18+, and set up a Neo4j database (free cloud or local Docker). See the [Installation guide](/installation).
+  </Step>
+  <Step title="Start the backend and app">
+    Run `go run .` in the `backend/` directory to start the GraphQL server, then `npx expo start` in `frontend/` to launch the mobile app. See the [Quick Start](/quickstart).
+  </Step>
+  <Step title="Connect your media services">
+    Add API keys for Spotify, Steam, YouTube, and other services to your `.env` file. See [Connecting Services](/guides/connecting-services).
+  </Step>
+</Steps>
+
+<Note>
+  NQ is self-hosted — your media history and preferences never leave your own infrastructure. The only external calls are to the APIs you explicitly configure.
+</Note>

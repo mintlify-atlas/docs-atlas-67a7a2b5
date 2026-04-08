@@ -1,0 +1,72 @@
+---
+title: "What is NQ?"
+description: "NQ is a self-hosted, cross-platform media recommendation system that unifies your preferences across movies, TV shows, games, books, and music."
+---
+
+NQ (Next in Queue) is a self-hosted, cross-platform media recommendation system. It aggregates your media consumption history from ten external services into a Neo4j graph database, then uses the relationships in that graph to surface personalized "next in queue" suggestions — what to watch, read, play, or listen to next based on what you have already consumed.
+
+Because NQ is self-hosted, your listening history, reading lists, and game library never leave your own infrastructure.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Recommendations engine" icon="wand-magic-sparkles">
+    NQ assigns fitness scores to candidate recommendations based on your cross-domain consumption history, giving you ranked, context-aware suggestions across all media types.
+  </Card>
+  <Card title="10 API integrations" icon="plug">
+    Pull data from Spotify, Apple Music, YouTube, YouTube Music, Twitch, Steam, IGDB, Open Library, Instapaper, and TMDB using their official APIs.
+  </Card>
+  <Card title="GraphQL API" icon="brackets-curly">
+    Every NQ capability is exposed through a typed GraphQL API built with gqlgen. Query your data, run mutations, and explore the schema in the built-in playground at `http://localhost:8080`.
+  </Card>
+  <Card title="React Native mobile app" icon="mobile">
+    The Expo-based frontend runs on iOS, Android, and web from a single TypeScript codebase, using Apollo Client for data fetching and Expo Router for navigation.
+  </Card>
+  <Card title="Social features" icon="users">
+    Connect with friends, see their activity, and discover what people with similar taste are consuming.
+  </Card>
+  <Card title="Self-hosted and private" icon="lock">
+    Run the database locally with Docker or connect to a free Neo4j Aura cloud instance. There is no telemetry, no cloud sync, and no dependency on NQ-operated infrastructure.
+  </Card>
+</CardGroup>
+
+## Architecture overview
+
+NQ has three main layers:
+
+**Go backend (GraphQL + Neo4j)**
+The backend is a single Go binary that starts an HTTP server on port 8080. It uses [99designs/gqlgen](https://github.com/99designs/gqlgen) to generate type-safe GraphQL resolvers from the schema and the official [neo4j-go-driver](https://github.com/neo4j/neo4j-go-driver) to connect to Neo4j. In development mode, the GraphQL Playground is served at `http://localhost:8080`. The backend handles authentication via Auth0 JWT validation, rate limiting, and CORS.
+
+**Neo4j graph database**
+Neo4j stores entities — users, media items, creators, platforms, and tags — as nodes, and their relationships as edges. This graph structure makes it efficient to traverse "similar to" and "liked by users who also liked" relationships when scoring recommendations. You can run Neo4j locally with Docker or use a free [Neo4j Aura](https://neo4j.com/cloud/aura/) cloud instance.
+
+**React Native frontend (Expo)**
+The frontend is a React Native app built with [Expo](https://expo.dev/). It uses Apollo Client to query the GraphQL backend. You can run it on a physical device via Expo Go, an Android emulator, an iOS simulator, or a web browser.
+
+## External integrations
+
+NQ connects to the following services to ingest your media data:
+
+- **Spotify** — music listening history and recommendations
+- **Apple Music** — music catalog and user data
+- **YouTube** — video content and playlists
+- **YouTube Music** — music tracks and albums
+- **Twitch** — streaming and gaming activity
+- **Steam** — game library and playtime data
+- **IGDB** — game metadata and information
+- **Open Library** — book metadata and ISBN lookups
+- **Instapaper** — reading list and article bookmarks
+- **TMDB** — movie and TV show metadata
+
+You do not need to configure all integrations to get started. Add API keys only for the services you use.
+
+## Get started
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="wrench" href="/installation">
+    Install Go, Node.js, and Neo4j, then clone and configure NQ.
+  </Card>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Get the backend and frontend running and see your first recommendation.
+  </Card>
+</CardGroup>

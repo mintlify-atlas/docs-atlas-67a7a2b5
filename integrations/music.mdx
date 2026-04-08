@@ -1,0 +1,140 @@
+---
+title: 'Music Integrations'
+description: 'Connect Spotify, Apple Music, and YouTube Music to sync your saved albums, playlists, and music videos into NQ.'
+---
+
+NQ supports three music integrations. Each syncs different data depending on the platform.
+
+<AccordionGroup>
+
+  <Accordion title="Spotify">
+
+    Spotify syncs your saved album library using the Spotify Web API.
+
+    **Data synced:**
+    - Saved albums (title, artists, track count, release date)
+    - Cover artwork (largest available image selected automatically)
+    - Record labels
+
+    **Authentication:** OAuth 2.0 client credentials flow. NQ acquires tokens automatically and refreshes them at 55 minutes (before the 60-minute expiry).
+
+    ### Getting credentials
+
+    <Steps>
+      <Step title="Open the Spotify Developer Dashboard">
+        Go to [https://developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) and sign in with your Spotify account.
+      </Step>
+      <Step title="Create a new application">
+        Click **Create app**, give it a name and description, then save.
+      </Step>
+      <Step title="Copy your credentials">
+        From the app settings page, copy the **Client ID** and **Client Secret**.
+      </Step>
+    </Steps>
+
+    ### Environment variables
+
+    ```bash
+    SPOTIFY_CLIENT_ID=your_client_id
+    SPOTIFY_CLIENT_SECRET=your_client_secret
+    ```
+
+    ### Rate limits
+
+    NQ implements automatic retry with exponential backoff when Spotify returns rate-limit responses. No additional configuration is required.
+
+    <Note>
+      The client credentials flow provides access to catalog data and saved library data for the authenticating user. User-specific features that require explicit user consent (such as playback control) use a separate OAuth flow that is not currently implemented.
+    </Note>
+
+  </Accordion>
+
+  <Accordion title="Apple Music">
+
+    Apple Music provides access to its catalog for album search and metadata enrichment. Accessing a user's personal library requires an additional user authentication step beyond what is configured here.
+
+    **Data synced:**
+    - Album catalog data (title, artist name, track count, release date)
+    - Record labels, genres, copyright
+    - Artwork URLs
+
+    **Authentication:** JWT developer token. This is a signed token you generate using your Apple Developer account. It grants catalog access; personal library access additionally requires a Music User Token obtained via MusicKit JS, which is not yet implemented.
+
+    ### Getting credentials
+
+    <Steps>
+      <Step title="Enroll in the Apple Developer Program">
+        Go to [https://developer.apple.com/programs/](https://developer.apple.com/programs/) and enroll if you have not already done so.
+      </Step>
+      <Step title="Create a MusicKit identifier and private key">
+        In the developer portal, navigate to **Certificates, Identifiers & Profiles** and create a MusicKit key. Download the `.p8` private key file.
+      </Step>
+      <Step title="Generate a JWT developer token">
+        Use your private key, Team ID, and Key ID to sign a JWT. The token must use the ES256 algorithm. Apple's documentation describes the required claims in detail.
+      </Step>
+    </Steps>
+
+    ### Environment variables
+
+    ```bash
+    APPLE_MUSIC_API_KEY=your_jwt_developer_token
+    ```
+
+    <Warning>
+      Apple Music developer tokens have a maximum expiry of 6 months. You must regenerate and redeploy the token before it expires, or Apple Music catalog access will fail.
+    </Warning>
+
+  </Accordion>
+
+  <Accordion title="YouTube Music">
+
+    YouTube Music does not have a separate API. NQ uses the **YouTube Data API v3** with music category filtering (`categoryId=10`) to discover music content. The same `YOUTUBE_API_KEY` used for the YouTube Data API integration is reused here — configuring one key enables both.
+
+    **Data synced:**
+    - Music videos (title, channel/artist, duration, thumbnails)
+    - Tags and genres from video metadata
+    - Artist and song title parsed from video titles formatted as `Artist - Song`
+
+    **Authentication:** Google API key (same as the YouTube Data API integration).
+
+    ### Getting credentials
+
+    <Steps>
+      <Step title="Open the Google Cloud Console">
+        Go to [https://console.cloud.google.com/](https://console.cloud.google.com/) and sign in.
+      </Step>
+      <Step title="Create a project and enable the API">
+        Create a new project (or select an existing one). Navigate to **APIs & Services → Library** and enable **YouTube Data API v3**.
+      </Step>
+      <Step title="Create an API key">
+        Go to **APIs & Services → Credentials**, click **Create credentials**, and select **API key**. Copy the generated key.
+      </Step>
+    </Steps>
+
+    ### Environment variables
+
+    ```bash
+    YOUTUBE_API_KEY=your_google_api_key
+    ```
+
+    ### Quota limits
+
+    YouTube Data API v3 has a default quota of **10,000 units per day** per project. YouTube Music requests count against the same quota as the YouTube Data API integration.
+
+    | Operation                        | Quota cost |
+    | -------------------------------- | ---------- |
+    | Search (`/search`)               | 100 units  |
+    | Video details (`/videos`)        | 1 unit     |
+    | Default daily quota              | 10,000 units |
+
+    <Warning>
+      Each search request costs 100 quota units. If you are running both the YouTube Data API and YouTube Music integrations on the same key, their usage is combined against a single 10,000-unit daily budget. Monitor your consumption in the Google Cloud Console under **APIs & Services → YouTube Data API v3 → Quotas**.
+    </Warning>
+
+    <Tip>
+      YouTube Music and the YouTube Data API share `YOUTUBE_API_KEY`. You do not need separate keys or separate Google Cloud projects for the two integrations.
+    </Tip>
+
+  </Accordion>
+
+</AccordionGroup>

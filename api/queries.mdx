@@ -1,0 +1,494 @@
+---
+title: "Queries"
+description: "All available read operations in the NQ GraphQL API."
+---
+
+Queries read data without modifying it. Send them as POST requests to `http://localhost:8080` with a JSON body containing the `query` field.
+
+---
+
+## User queries
+
+### `user`
+
+Returns a single user by ID.
+
+<ParamField path="query.id" type="UUID" required>
+  The UUID of the user to retrieve.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  user(id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890") {
+    id
+    name
+    email
+    avatarUrl
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `users`
+
+Returns all users in the system.
+
+<CodeGroup>
+
+```graphql Example
+query {
+  users {
+    id
+    name
+    email
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `me`
+
+Returns the currently authenticated user. Requires a valid `Authorization` header.
+
+<CodeGroup>
+
+```graphql Example
+query {
+  me {
+    id
+    name
+    email
+    avatarUrl
+    favorites {
+      id
+      title
+    }
+    friends {
+      id
+      name
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `searchUsers`
+
+Searches for users by name or email. Requires authentication. Excludes the current user from results.
+
+<ParamField path="query.query" type="String" required>
+  The search string to match against user names and emails.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  searchUsers(query: "alice") {
+    id
+    name
+    email
+    avatarUrl
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+## Media queries
+
+### `media`
+
+Returns any media item by ID, regardless of type. The returned object implements the `Media` interface; use inline fragments to access type-specific fields.
+
+<ParamField path="query.id" type="UUID" required>
+  The UUID of the media item.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  media(id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890") {
+    id
+    title
+    releaseDate
+    description
+    averageRating
+    ... on Movie {
+      runtime
+      genres {
+        name
+      }
+    }
+    ... on TVShow {
+      seasons
+      episodes
+      status
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `allMedia`
+
+Returns all media items across every type.
+
+<CodeGroup>
+
+```graphql Example
+query {
+  allMedia {
+    id
+    title
+    releaseDate
+    averageRating
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `movies`
+
+Returns a paginated list of movies.
+
+<ParamField path="query.limit" type="Int">
+  Maximum number of movies to return.
+</ParamField>
+
+<ParamField path="query.offset" type="Int">
+  Number of movies to skip before returning results.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  movies(limit: 20, offset: 0) {
+    id
+    title
+    releaseDate
+    runtime
+    averageRating
+    genres {
+      name
+    }
+    coverUrl
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `tvShows`
+
+Returns a paginated list of TV shows.
+
+<ParamField path="query.limit" type="Int">
+  Maximum number of TV shows to return.
+</ParamField>
+
+<ParamField path="query.offset" type="Int">
+  Number of TV shows to skip before returning results.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  tvShows(limit: 10, offset: 0) {
+    id
+    title
+    seasons
+    episodes
+    status
+    averageRating
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `books`
+
+Returns a paginated list of books.
+
+<ParamField path="query.limit" type="Int">
+  Maximum number of books to return.
+</ParamField>
+
+<ParamField path="query.offset" type="Int">
+  Number of books to skip before returning results.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  books(limit: 10, offset: 0) {
+    id
+    title
+    pages
+    isbn
+    publisher
+    averageRating
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `games`
+
+Returns a paginated list of games.
+
+<ParamField path="query.limit" type="Int">
+  Maximum number of games to return.
+</ParamField>
+
+<ParamField path="query.offset" type="Int">
+  Number of games to skip before returning results.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  games(limit: 10, offset: 0) {
+    id
+    title
+    genre
+    esrbRating
+    multiplayer
+    averageRating
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `musicAlbums`
+
+Returns a paginated list of music albums.
+
+<ParamField path="query.limit" type="Int">
+  Maximum number of albums to return.
+</ParamField>
+
+<ParamField path="query.offset" type="Int">
+  Number of albums to skip before returning results.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  musicAlbums(limit: 10, offset: 0) {
+    id
+    title
+    trackCount
+    duration
+    label
+    averageRating
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `autocompleteMedia`
+
+Searches external metadata sources (TMDB, Google Books, IGDB) and returns title suggestions for a given media type. Useful for search-as-you-type UIs.
+
+<ParamField path="query.type" type="MediaType" required>
+  The type of media to search. One of `MOVIE`, `TV`, `BOOK`, `GAME`, `MUSIC`.
+</ParamField>
+
+<ParamField path="query.query" type="String" required>
+  The partial title string to search for.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  autocompleteMedia(type: MOVIE, query: "Eternal") {
+    title
+    year
+    externalId
+    imageUrl
+    subtitle
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `recursiveSearchStatus`
+
+Returns the background search status for a media item. When a movie, TV show, book, or game is created with `searchDepth: 0`, the backend automatically searches for connected media. Use this query to poll the status of that background job.
+
+<ParamField path="query.mediaId" type="UUID" required>
+  The UUID of the media item whose search status to check.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  recursiveSearchStatus(mediaId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890") {
+    state
+    completedAt
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `castAndCrew`
+
+Returns cast and crew for any media item that supports it (movies and TV shows). Returns both simple person lists and structured credits with role details.
+
+<ParamField path="query.mediaID" type="UUID" required>
+  The UUID of the media item.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  castAndCrew(mediaID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890") {
+    cast {
+      id
+      name
+    }
+    castCredits {
+      person {
+        id
+        name
+      }
+      character
+      order
+    }
+    crew {
+      id
+      name
+    }
+    crewCredits {
+      person {
+        id
+        name
+      }
+      job
+      department
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+## Social queries
+
+### `friendsActivity`
+
+Returns recent activity from the authenticated user's friends. Requires authentication.
+
+<ParamField path="query.limit" type="Int">
+  Maximum number of activity items to return. Defaults to 50.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+query {
+  friendsActivity(limit: 20) {
+    id
+    user {
+      id
+      name
+      avatarUrl
+    }
+    media {
+      id
+      title
+    }
+    status {
+      id
+      name
+    }
+    rating
+    review
+    finishedAt
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+## Recommendations
+
+### `getRecommendations`
+
+Returns personalized media recommendations for the authenticated user. Requires authentication. See [Recommendations](/api/recommendations) for details on how scores are calculated.
+
+<CodeGroup>
+
+```graphql Example
+query {
+  getRecommendations {
+    id
+    media {
+      id
+      title
+      coverUrl
+    }
+    recommender {
+      id
+      name
+    }
+    source
+    score
+  }
+}
+```
+
+</CodeGroup>

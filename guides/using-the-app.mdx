@@ -1,0 +1,196 @@
+---
+title: "Using the App"
+description: "A walkthrough of the NQ mobile app: tabs, searching for media, rating, tracking activity, social features, and viewing recommendations."
+keywords: ["NQ", "mobile app", "queue", "recommendations", "history", "friends", "add media", "account"]
+---
+
+NQ is a mobile app built with Expo (React Native). Once the backend is running and the app is open, you interact with five tabs in a floating pill-shaped tab bar at the bottom of the screen.
+
+<Note>
+  The app requires the NQ backend server to be running at `http://localhost:8080` before you open it. Start the backend with `go run .` from the `backend/` directory.
+</Note>
+
+## Tab overview
+
+<CardGroup cols={2}>
+  <Card title="Recommended (Home)" icon="house">
+    Personalized recommendations displayed as a scrollable cover art grid. Filterable by media type.
+  </Card>
+  <Card title="Recently Viewed (History)" icon="clock">
+    Every title you have logged, in the order it was added. Shows enrichment status for newly added items.
+  </Card>
+  <Card title="Add New Media" icon="circle-plus">
+    Search for and add any movie, TV show, book, music album, or game, with an optional rating and review.
+  </Card>
+  <Card title="Friends" icon="users">
+    Search for other NQ users, manage friend requests, and see what your friends have been watching, playing, and reading.
+  </Card>
+  <Card title="Account Settings" icon="user">
+    Edit your profile, change the app theme, manage notifications, and sign in or out.
+  </Card>
+</CardGroup>
+
+---
+
+## Home tab
+
+The Home tab (house icon) is your recommendations feed. It is titled **Recommended** in the app.
+
+The screen displays a 3-column grid of cover artwork. Each card represents a media item that NQ has surfaced based on your activity and graph relationships. Pull down anywhere on the grid to refresh the list.
+
+**Filtering by media type**
+
+A sticky filter bar sits just below the page header. Tap one or more media type pills — Movie, TV, Book, Music, Game — to narrow the grid to only those types. Tap a selected pill again to deselect it. When no types are selected, all recommendations are shown.
+
+**Infinite scroll**
+
+The list loads 18 items at a time. Scroll to the bottom to automatically load the next page. Skeleton placeholder cards appear while the next batch loads.
+
+**Scroll-to-top button**
+
+After scrolling down past approximately 600 pixels, a floating arrow button appears in the bottom-right corner. Tap it to snap back to the top of the list.
+
+**Opening a media detail screen**
+
+Tap any cover card to open the detail screen for that item. The detail screen shows the title, description, release date, cover image, creators, tags, your activity status, related media, and average rating.
+
+<Tip>
+  If your Home tab shows "No recommendations yet. Add your first title," you need to add some media to your library first using the Add tab. See [Adding media to your queue](#adding-media-to-your-queue) below.
+</Tip>
+
+---
+
+## History tab
+
+The History tab (clock icon) shows all media items you have logged under your account. It is titled **Recently Viewed** in the app.
+
+The layout mirrors the Home tab — a 3-column cover grid with the same media-type filter bar at the top and pull-to-refresh support.
+
+**What appears here**
+
+Every entry comes from your `UserActivity` records. When you add a title via the Add tab or sync a connected service, NQ creates an activity record linking you to that media item. Movies, TV shows, books, games, and music albums all appear here.
+
+**Enrichment indicator**
+
+When you add a new title, the cover card for that item shows a loading indicator while the backend enriches it with metadata from TMDB, IGDB, or Open Library. Once enrichment completes (typically a few seconds to a minute), the indicator disappears and the detail screen will include related media suggestions.
+
+**Tapping a card**
+
+Tap any card to open the detail screen, where you can view full metadata and update your activity status or rating.
+
+---
+
+## Adding media to your queue
+
+The center tab (plus icon) opens the **Add New Media** form. Use it to log any title — whether you have watched/played/read it, are in progress, or plan to consume it.
+
+<Steps>
+  <Step title="Select a media type">
+    Tap one of the five type buttons: **Movie**, **TV Show**, **Book**, **Music**, or **Game**. The type you select determines which external database NQ uses for autocomplete suggestions.
+  </Step>
+  <Step title="Type the title">
+    Start typing in the **Title** field. An autocomplete dropdown appears beneath the input showing suggestions from the relevant metadata service (TMDB for movies and TV, IGDB for games, Open Library for books). Music autocomplete is not yet available — type the title manually.
+  </Step>
+  <Step title="Select a suggestion or enter manually">
+    Tap a suggestion to populate the title and year automatically. NQ stores the external ID from the suggestion so the backend can fetch full metadata. If your title is not in the autocomplete list, finish typing and submit manually.
+  </Step>
+  <Step title="Optionally set a release year">
+    The **Year** field is pre-filled when you pick a suggestion. You can edit it or leave it empty — the backend will use the current year as a fallback.
+  </Step>
+  <Step title="Optionally rate and review">
+    Tap **Rate & Review (Optional)** to expand the rating section.
+
+    - **Your Rating** — tap a star to set a score from 1 to 5.
+    - **Review** — write up to 140 characters. Adding any review text automatically sets the activity status to **Completed**.
+    - **Status** — if you have not written a review, pick a status manually: Want to Watch, Watching, Completed, Dropped, or On Hold.
+  </Step>
+  <Step title="Tap Add Media">
+    NQ creates the media item and your activity record, then navigates you to the History tab where the new card appears with an enrichment indicator while the backend fetches full metadata.
+  </Step>
+</Steps>
+
+<Warning>
+  Titles submitted manually (without selecting an autocomplete suggestion) are still saved, but the backend may not be able to fetch full metadata if the title does not closely match a known entry in the metadata databases.
+</Warning>
+
+---
+
+## Rating media and tracking activity
+
+You can update a rating or status at any time — not only when first adding a title.
+
+**From the Add form:** Rate and set a status as part of the initial submission (see above).
+
+**From the detail screen:** Open any item from the Home or History tab and use the activity controls on the detail screen to update your status, score, or review.
+
+The `UserActivity` record stored for each item tracks:
+
+| Field | Description |
+|---|---|
+| `status` | Activity status (Want to Watch, Watching, Completed, Dropped, On Hold) |
+| `rating` | Your numeric score (1–5) |
+| `review` | Free-text review up to 140 characters |
+| `startedAt` | Timestamp when you marked it as started |
+| `finishedAt` | Timestamp when you marked it as completed |
+
+Ratings directly influence the recommendation engine. The more media you rate, the more accurate your recommendations become. See [Getting Recommendations](/guides/recommendations) for details.
+
+---
+
+## Friends and social features
+
+The Friends tab (people icon) manages your social graph on NQ.
+
+### Searching for users
+
+The **Add Friend** section at the top of the tab contains a search input. Start typing a name to see an autocomplete list of matching NQ users. Tap a user's name to send them a friend request immediately.
+
+### Managing friend requests
+
+**Pending Requests** — friend requests others have sent to you. Each row shows the sender's name with **Accept** and **Decline** buttons.
+
+**Sent Requests** — requests you have sent that have not yet been accepted, shown with a "Pending" label.
+
+### Your friends list
+
+The **Friends** section lists everyone who has accepted your request or whose request you have accepted. Each row shows an avatar initial. To remove a friend, tap **Remove** next to their name and confirm the prompt.
+
+### Activity feed
+
+**Recent Activity** shows the last 30 activity events from your friends — what they have started, finished, dropped, or added to their list. Each row shows:
+
+- The friend's avatar initial and name
+- A verb describing the action ("finished", "started", "wants to watch", "dropped", "put on hold")
+- The title of the media item highlighted in the app's primary color
+
+Tap any activity row to open the detail screen for that media item.
+
+<Tip>
+  Pull down on the Friends tab to refresh both the friends list and the activity feed at the same time.
+</Tip>
+
+---
+
+## Viewing your recommendations
+
+Recommendations appear on the **Home tab**. NQ calculates a fitness score for each candidate media item and ranks them from highest to lowest. The recommendation list refreshes when you pull down on the Home screen.
+
+For a detailed explanation of how the recommendation engine works and how to improve your results, see [Getting Recommendations](/guides/recommendations).
+
+---
+
+## Account settings
+
+The Account tab (person icon) contains four sections:
+
+**Profile Information** — edit your first name, last name, and email address, then tap **Save Changes** to persist updates. Your avatar is shown at the top of this section alongside your signed-in email.
+
+**Notifications** — toggle notifications for friend activity (when a friend rates new media) and personalized recommendations.
+
+**Appearance** — switch between light, dark, and system (auto) themes using the three toggle buttons in this section.
+
+**Account management** — sign in with Auth0, add a second account, switch between stored accounts, or log out. If you have multiple accounts stored, a **Switch Account** button appears above **Add Account**.
+
+<Warning>
+  The **Delete Account** option at the bottom of the Account tab is permanent and cannot be undone.
+</Warning>

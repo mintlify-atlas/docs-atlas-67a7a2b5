@@ -1,0 +1,308 @@
+---
+title: 'Connecting Services'
+description: 'How to obtain credentials and configure each of the 10 NQ integrations, grouped by media category.'
+keywords: ['integrations', 'api keys', 'spotify', 'steam', 'youtube', 'twitch', 'apple music', 'instapaper', 'tmdb', 'igdb', 'open library', 'env']
+---
+
+NQ connects to 10 external services to import your media history and enrich it with metadata. You only need to configure the services you actually use — NQ skips any integration whose credentials are absent.
+
+There are two categories of integration:
+
+- **User data integrations (7)** — sync your personal library and activity from streaming or gaming platforms.
+- **Metadata providers (3)** — enrich media entries with detailed information such as cast, genre, and cover art.
+
+All credentials go into the `backend/.env` file. Copy the template first:
+
+```bash
+cd backend
+cp .envtemplate .env
+```
+
+<Note>
+  Never commit `.env` to version control. It is listed in `.gitignore` by default.
+</Note>
+
+---
+
+## Service setup
+
+<Tabs>
+  <Tab title="Music">
+    <AccordionGroup>
+      <Accordion title="Spotify" icon="music">
+        **What it syncs:** Your saved albums, including title, artists, track count, release date, cover artwork, and record label.
+
+        **Authentication:** OAuth 2.0 client credentials
+
+        <Steps>
+          <Step title="Create a Spotify developer application">
+            Go to [https://developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) and log in with your Spotify account. Click **Create app** and fill in the form:
+
+            - App name: anything you like (e.g., `NQ`)
+            - Redirect URI: `http://localhost:8080`
+            - API/SDK type: Web API
+          </Step>
+          <Step title="Copy your credentials">
+            Open the app, click **Settings**, and copy the **Client ID**. Click **View client secret** and copy the **Client Secret**.
+          </Step>
+          <Step title="Add to .env">
+            ```bash
+            SPOTIFY_CLIENT_ID=your_client_id
+            SPOTIFY_CLIENT_SECRET=your_client_secret
+            ```
+          </Step>
+        </Steps>
+
+        <Tip>
+          Spotify access tokens expire after 60 minutes. NQ refreshes them automatically at 55 minutes.
+        </Tip>
+      </Accordion>
+
+      <Accordion title="Apple Music" icon="headphones">
+        **What it syncs:** Album catalog data, artist information, track counts, record labels, genres, artwork URLs, and release dates.
+
+        **Authentication:** JWT developer token
+
+        <Steps>
+          <Step title="Enroll in the Apple Developer Program">
+            Visit [https://developer.apple.com/programs/](https://developer.apple.com/programs/) and enroll. Membership costs $99/year.
+          </Step>
+          <Step title="Create a MusicKit identifier and private key">
+            In the Apple Developer portal, create a MusicKit identifier and generate a private key for it.
+          </Step>
+          <Step title="Generate a JWT developer token">
+            Use the private key to sign a JWT with your Team ID and Key ID as the issuer and key identifier claims. Set an expiration of up to 6 months.
+          </Step>
+          <Step title="Add to .env">
+            ```bash
+            APPLE_MUSIC_API_KEY=your_jwt_token
+            ```
+          </Step>
+        </Steps>
+
+        <Warning>
+          User library access (personal saved albums) requires additional MusicKit JS or user-level OAuth, which is not yet implemented. The current integration accesses the Apple Music catalog.
+        </Warning>
+      </Accordion>
+
+      <Accordion title="YouTube Music" icon="music">
+        **What it syncs:** Music videos and playlists, artist information, duration, thumbnails, and tags.
+
+        **Authentication:** API key (same key as the YouTube video integration)
+
+        This integration shares `YOUTUBE_API_KEY` with the YouTube video integration. See the **Video** tab for the full setup steps.
+
+        ```bash
+        YOUTUBE_API_KEY=your_api_key
+        ```
+
+        <Note>
+          YouTube Music uses YouTube Data API v3 with `categoryId=10` (Music) to filter results. Both integrations activate with a single API key.
+        </Note>
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+
+  <Tab title="Gaming">
+    <AccordionGroup>
+      <Accordion title="Steam" icon="gamepad-2">
+        **What it syncs:** Your owned games library, including titles, descriptions, genres, developers, publishers, playtime statistics, cover images, and release dates.
+
+        **Authentication:** API key + Steam ID (per user)
+
+        <Steps>
+          <Step title="Register for a Steam Web API key">
+            Visit [https://steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey) and log in with your Steam account. Enter a domain name (any value works for personal use, e.g., `localhost`) and click **Register**.
+          </Step>
+          <Step title="Copy the key">
+            Copy the key shown on the page.
+          </Step>
+          <Step title="Add to .env">
+            ```bash
+            STEAM_API_KEY=your_api_key
+            ```
+          </Step>
+        </Steps>
+
+        <Note>
+          Each NQ user must provide their own Steam ID when syncing. The API key is a server-level credential; the Steam ID is per user.
+        </Note>
+      </Accordion>
+
+      <Accordion title="Twitch" icon="twitch">
+        **What it syncs:** Top games on Twitch (titles and box art). User-followed channels require user OAuth, which is not yet implemented.
+
+        **Authentication:** OAuth 2.0 client credentials
+
+        <Steps>
+          <Step title="Register a Twitch application">
+            Go to [https://dev.twitch.tv/console](https://dev.twitch.tv/console) and log in. Click **Register Your Application**. Set the OAuth Redirect URL to `http://localhost` and choose **Other** as the category.
+          </Step>
+          <Step title="Copy your credentials">
+            Copy the **Client ID** from the application page. Click **New Secret** to generate a **Client Secret**.
+          </Step>
+          <Step title="Add to .env">
+            ```bash
+            TWITCH_CLIENT_ID=your_client_id
+            TWITCH_CLIENT_SECRET=your_client_secret
+            ```
+          </Step>
+        </Steps>
+
+        <Tip>
+          App access tokens last approximately 60 days. NQ refreshes them automatically at 55 days.
+        </Tip>
+      </Accordion>
+
+      <Accordion title="IGDB (Internet Game Database)" icon="trophy">
+        **What it provides:** Comprehensive game metadata — summaries, release dates, genres, themes, keywords, game modes, player perspectives, franchises, platform lists, and cover artwork.
+
+        **Authentication:** OAuth 2.0 via Twitch (IGDB is owned by Twitch)
+
+        IGDB uses the same Twitch developer credentials as the Twitch integration. NQ reads `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` to authenticate with IGDB — no separate variables needed:
+
+        ```bash
+        TWITCH_CLIENT_ID=your_twitch_client_id
+        TWITCH_CLIENT_SECRET=your_twitch_client_secret
+        ```
+
+        If you only need IGDB and not Twitch streaming data, follow the Twitch setup steps above and use those credentials.
+
+        <Tip>
+          IGDB enforces a rate limit of 4 requests per second. NQ enforces a minimum 300 ms interval between requests and caches responses for 10 minutes to stay within limits.
+        </Tip>
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+
+  <Tab title="Video">
+    <AccordionGroup>
+      <Accordion title="YouTube" icon="youtube">
+        **What it syncs:** Video metadata including title, description, channel, duration, view counts, like counts, comment counts, thumbnails, and publication dates.
+
+        **Authentication:** API key
+
+        <Steps>
+          <Step title="Create a Google Cloud project">
+            Visit [https://console.cloud.google.com/](https://console.cloud.google.com/) and create a new project (or select an existing one).
+          </Step>
+          <Step title="Enable the YouTube Data API v3">
+            In the project, go to **APIs & Services → Library**, search for **YouTube Data API v3**, and click **Enable**.
+          </Step>
+          <Step title="Create an API key">
+            Go to **APIs & Services → Credentials**, click **Create Credentials → API Key**, and copy the generated key.
+          </Step>
+          <Step title="Add to .env">
+            ```bash
+            YOUTUBE_API_KEY=your_api_key
+            ```
+          </Step>
+        </Steps>
+
+        <Warning>
+          YouTube Data API v3 has a default daily quota of 10,000 units. Search operations cost 100 units each; video detail lookups cost 1 unit. Monitor your usage in the Google Cloud Console. User-specific data such as liked videos and subscriptions requires OAuth 2.0 and is not yet implemented.
+        </Warning>
+      </Accordion>
+
+      <Accordion title="TMDB (The Movie Database)" icon="film">
+        **What it provides:** Detailed movie and TV show metadata — descriptions, genres, runtime, budget, box office, cast and crew credits, production companies, poster images, and similar titles.
+
+        **Authentication:** Bearer token (API Read Access Token)
+
+        <Steps>
+          <Step title="Create a TMDB account">
+            Visit [https://www.themoviedb.org/](https://www.themoviedb.org/) and sign up for a free account.
+          </Step>
+          <Step title="Request an API key">
+            Go to [https://www.themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) and request an API key. Choose **Developer** when asked for the type of use.
+          </Step>
+          <Step title="Copy the v4 Read Access Token">
+            On the API settings page, copy the **API Read Access Token** (the long JWT, not the shorter v3 API key).
+          </Step>
+          <Step title="Add to .env">
+            Add this line manually to `backend/.env` (it is not in the default template):
+            ```bash
+            TMDB_API_READ_ACCESS_TOKEN=your_bearer_token
+            ```
+          </Step>
+        </Steps>
+
+        <Tip>
+          TMDB supports up to 40 requests per 10 seconds. NQ auto-retries on rate-limit responses.
+        </Tip>
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+
+  <Tab title="Books / Articles">
+    <AccordionGroup>
+      <Accordion title="Open Library" icon="book-open">
+        **What it provides:** Book metadata — titles, authors, publishers, ISBN lookups, publication dates, page counts, cover images, and subject categorization (places, people, times, topics).
+
+        **Authentication:** None required
+
+        No credentials are needed. Open Library is a public API. NQ uses it automatically when book metadata is requested.
+
+        ```bash
+        # No environment variables needed for Open Library
+        ```
+
+        <Note>
+          NQ prefers ISBN-13 over ISBN-10 for lookups. Title searches use smart normalization to improve match quality. Multi-language support uses ISO 639 language codes.
+        </Note>
+      </Accordion>
+
+      <Accordion title="Instapaper" icon="bookmark">
+        **What it syncs:** Your saved bookmarks and articles, including titles, URLs, descriptions, reading progress (unread, in progress, completed), starred status, and timestamps.
+
+        **Authentication:** Basic auth (your Instapaper username and password)
+
+        <Steps>
+          <Step title="Locate your Instapaper credentials">
+            Use the email address and password you registered with at [https://www.instapaper.com/](https://www.instapaper.com/). No API registration is required.
+          </Step>
+          <Step title="Add to .env">
+            ```bash
+            INSTAPAPER_USERNAME=your_instapaper_email
+            INSTAPAPER_PASSWORD=your_instapaper_password
+            ```
+          </Step>
+        </Steps>
+
+        <Warning>
+          Your Instapaper password is stored in plaintext in `.env`. Keep this file secure and never commit it to version control.
+        </Warning>
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+</Tabs>
+
+---
+
+## Complete .env reference
+
+The full set of integration-related environment variables for `backend/.env`:
+
+```bash
+# ── Music ─────────────────────────────────────────────
+SPOTIFY_CLIENT_ID=
+SPOTIFY_CLIENT_SECRET=
+APPLE_MUSIC_API_KEY=      # JWT developer token
+YOUTUBE_API_KEY=          # used for both YouTube video and YouTube Music
+
+# ── Gaming ────────────────────────────────────────────
+STEAM_API_KEY=
+TWITCH_CLIENT_ID=         # also used for IGDB
+TWITCH_CLIENT_SECRET=     # also used for IGDB
+
+# ── Video ─────────────────────────────────────────────
+# YOUTUBE_API_KEY already listed above
+TMDB_API_READ_ACCESS_TOKEN=   # add manually; not in .envtemplate
+
+# ── Books / Articles ──────────────────────────────────
+# Open Library requires no credentials
+INSTAPAPER_USERNAME=
+INSTAPAPER_PASSWORD=
+```
+
+Leave any variable blank (or omit it entirely) for services you do not use. NQ initializes only the integrations whose required credentials are present.

@@ -1,0 +1,772 @@
+---
+title: "Mutations"
+description: "All available write operations in the NQ GraphQL API."
+---
+
+Mutations create, update, or delete data. Like queries, send them as POST requests to `http://localhost:8080`. Most mutations require authentication via the `Authorization` header.
+
+---
+
+## User mutations
+
+### `createUser`
+
+Creates a new user account. In normal app usage, user creation happens automatically on first authenticated request. Use this mutation for programmatic or administrative account creation.
+
+<ParamField path="body.name" type="String" required>
+  The user's display name.
+</ParamField>
+
+<ParamField path="body.email" type="String" required>
+  The user's email address.
+</ParamField>
+
+<ParamField path="body.authProvider" type="String">
+  The authentication provider identifier (e.g., `"auth0"`).
+</ParamField>
+
+<ParamField path="body.authSubject" type="String">
+  The provider-issued subject identifier (the `sub` claim from the JWT).
+</ParamField>
+
+<ParamField path="body.avatarUrl" type="String">
+  URL of the user's avatar image.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  createUser(input: {
+    name: "Alice Kim"
+    email: "alice@example.com"
+    authProvider: "auth0"
+    authSubject: "auth0|abc123"
+  }) {
+    id
+    name
+    email
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `updateUser`
+
+Updates an existing user's profile fields. Requires authentication.
+
+<ParamField path="body.id" type="UUID" required>
+  The UUID of the user to update.
+</ParamField>
+
+<ParamField path="body.name" type="String">
+  New display name.
+</ParamField>
+
+<ParamField path="body.email" type="String">
+  New email address.
+</ParamField>
+
+<ParamField path="body.avatarUrl" type="String">
+  New avatar URL.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  updateUser(
+    id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    input: { name: "Alice K." }
+  ) {
+    id
+    name
+    email
+    avatarUrl
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `deleteUser`
+
+Permanently deletes a user account. Returns `true` on success.
+
+<ParamField path="body.id" type="UUID" required>
+  The UUID of the user to delete.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  deleteUser(id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+}
+```
+
+</CodeGroup>
+
+---
+
+## Media mutations
+
+### `createMovie`
+
+Creates a new movie. When `searchDepth` is `0` (or omitted), the backend automatically kicks off a background job to search for related movies via cast, crew, and production company connections.
+
+<ParamField path="body.title" type="String" required>
+  The movie title.
+</ParamField>
+
+<ParamField path="body.releaseDate" type="Date">
+  Release date in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField path="body.description" type="String">
+  Plot summary or description.
+</ParamField>
+
+<ParamField path="body.coverUrl" type="String">
+  URL of the poster or cover image.
+</ParamField>
+
+<ParamField path="body.externalId" type="String">
+  TMDB or other external identifier.
+</ParamField>
+
+<ParamField path="body.runtime" type="Int">
+  Runtime in minutes.
+</ParamField>
+
+<ParamField path="body.budget" type="Int">
+  Production budget in USD.
+</ParamField>
+
+<ParamField path="body.boxOffice" type="Int">
+  Box office gross in USD.
+</ParamField>
+
+<ParamField path="body.cast" type="String[]">
+  List of cast member names.
+</ParamField>
+
+<ParamField path="body.crew" type="String[]">
+  List of crew member names.
+</ParamField>
+
+<ParamField path="body.productionCompanies" type="String[]">
+  List of production company names.
+</ParamField>
+
+<ParamField path="body.genres" type="String[]">
+  List of genre names.
+</ParamField>
+
+<ParamField path="body.searchDepth" type="Int">
+  Internal depth counter for recursive searches. Omit (or pass `0`) for top-level creation.
+</ParamField>
+
+<ParamField path="body.maxConnections" type="Int">
+  Maximum number of connected media items to fetch during the background search. Defaults to 25.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  createMovie(input: {
+    title: "Eternal Sunshine of the Spotless Mind"
+    releaseDate: "2004-03-19"
+    runtime: 108
+    genres: ["Drama", "Romance", "Science Fiction"]
+    cast: ["Jim Carrey", "Kate Winslet", "Tom Wilkinson"]
+    crew: ["Michel Gondry"]
+    productionCompanies: ["Focus Features"]
+  }) {
+    id
+    title
+    releaseDate
+    runtime
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `createTVShow`
+
+Creates a new TV show. When `searchDepth` is `0` (or omitted), a background job searches for related shows.
+
+<ParamField path="body.title" type="String" required>
+  The show title.
+</ParamField>
+
+<ParamField path="body.releaseDate" type="Date">
+  First air date in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField path="body.description" type="String">
+  Show description.
+</ParamField>
+
+<ParamField path="body.coverUrl" type="String">
+  URL of the poster or cover image.
+</ParamField>
+
+<ParamField path="body.externalId" type="String">
+  TMDB or other external identifier.
+</ParamField>
+
+<ParamField path="body.seasons" type="Int">
+  Total number of seasons.
+</ParamField>
+
+<ParamField path="body.episodes" type="Int">
+  Total number of episodes.
+</ParamField>
+
+<ParamField path="body.status" type="String">
+  Airing status: `"Ongoing"`, `"Ended"`, or `"Cancelled"`.
+</ParamField>
+
+<ParamField path="body.cast" type="String[]">
+  List of cast member names.
+</ParamField>
+
+<ParamField path="body.crew" type="String[]">
+  List of crew member names.
+</ParamField>
+
+<ParamField path="body.productionCompanies" type="String[]">
+  List of production company names.
+</ParamField>
+
+<ParamField path="body.genres" type="String[]">
+  List of genre names.
+</ParamField>
+
+<ParamField path="body.searchDepth" type="Int">
+  Internal depth counter for recursive searches.
+</ParamField>
+
+<ParamField path="body.maxConnections" type="Int">
+  Maximum connected items to fetch in the background job. Defaults to 25.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  createTVShow(input: {
+    title: "Severance"
+    releaseDate: "2022-02-18"
+    seasons: 2
+    status: "Ongoing"
+    genres: ["Drama", "Mystery", "Science Fiction"]
+    cast: ["Adam Scott", "Britt Lower", "Patricia Arquette"]
+  }) {
+    id
+    title
+    seasons
+    status
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `createBook`
+
+Creates a new book entry.
+
+<ParamField path="body.title" type="String" required>
+  The book title.
+</ParamField>
+
+<ParamField path="body.releaseDate" type="Date">
+  Publication date in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField path="body.description" type="String">
+  Book synopsis or description.
+</ParamField>
+
+<ParamField path="body.coverUrl" type="String">
+  URL of the cover image.
+</ParamField>
+
+<ParamField path="body.pages" type="Int">
+  Number of pages.
+</ParamField>
+
+<ParamField path="body.isbn" type="String">
+  ISBN-10 or ISBN-13.
+</ParamField>
+
+<ParamField path="body.publisher" type="String">
+  Publisher name.
+</ParamField>
+
+<ParamField path="body.authors" type="String[]">
+  List of author names.
+</ParamField>
+
+<ParamField path="body.publishers" type="String[]">
+  List of publisher names (used when multiple publishers exist).
+</ParamField>
+
+<ParamField path="body.subjects" type="String[]">
+  Subject tags for the book (e.g., `["Science", "Biography"]`).
+</ParamField>
+
+<ParamField path="body.searchDepth" type="Int">
+  Internal depth counter for recursive searches.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  createBook(input: {
+    title: "The Left Hand of Darkness"
+    releaseDate: "1969-03-01"
+    pages: 286
+    isbn: "9780441478125"
+    authors: ["Ursula K. Le Guin"]
+    subjects: ["Science Fiction", "Gender", "Anthropology"]
+  }) {
+    id
+    title
+    pages
+    isbn
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `createGame`
+
+Creates a new game entry.
+
+<ParamField path="body.title" type="String" required>
+  The game title.
+</ParamField>
+
+<ParamField path="body.releaseDate" type="Date">
+  Release date in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField path="body.description" type="String">
+  Game description.
+</ParamField>
+
+<ParamField path="body.coverUrl" type="String">
+  URL of the cover image.
+</ParamField>
+
+<ParamField path="body.externalId" type="String">
+  IGDB or other external identifier.
+</ParamField>
+
+<ParamField path="body.genre" type="String[]">
+  List of genre names.
+</ParamField>
+
+<ParamField path="body.themes" type="String[]">
+  List of thematic tags.
+</ParamField>
+
+<ParamField path="body.keywords" type="String[]">
+  List of keyword tags.
+</ParamField>
+
+<ParamField path="body.gameModes" type="String[]">
+  Game modes (e.g., `["Single player", "Multiplayer"]`).
+</ParamField>
+
+<ParamField path="body.perspectives" type="String[]">
+  Player perspectives (e.g., `["First person", "Third person"]`).
+</ParamField>
+
+<ParamField path="body.franchises" type="String[]">
+  Franchise or series names.
+</ParamField>
+
+<ParamField path="body.platforms" type="String[]">
+  Platform names (e.g., `["PC", "PlayStation 5"]`).
+</ParamField>
+
+<ParamField path="body.esrbRating" type="String">
+  ESRB rating string (e.g., `"M"`, `"T"`, `"E"`).
+</ParamField>
+
+<ParamField path="body.multiplayer" type="Boolean">
+  Whether the game supports multiplayer.
+</ParamField>
+
+<ParamField path="body.searchDepth" type="Int">
+  Internal depth counter for recursive searches.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  createGame(input: {
+    title: "Hades"
+    releaseDate: "2020-09-17"
+    genre: ["Role-playing", "Hack and slash"]
+    themes: ["Action", "Fantasy"]
+    gameModes: ["Single player"]
+    platforms: ["PC", "Nintendo Switch", "PlayStation 4"]
+    esrbRating: "T"
+    multiplayer: false
+  }) {
+    id
+    title
+    genre
+    esrbRating
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `createMusicAlbum`
+
+Creates a new music album entry.
+
+<ParamField path="body.title" type="String" required>
+  The album title.
+</ParamField>
+
+<ParamField path="body.releaseDate" type="Date">
+  Release date in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField path="body.description" type="String">
+  Album description.
+</ParamField>
+
+<ParamField path="body.coverUrl" type="String">
+  URL of the album artwork.
+</ParamField>
+
+<ParamField path="body.trackCount" type="Int">
+  Number of tracks on the album.
+</ParamField>
+
+<ParamField path="body.duration" type="Int">
+  Total duration in seconds.
+</ParamField>
+
+<ParamField path="body.label" type="String">
+  Record label name.
+</ParamField>
+
+<ParamField path="body.searchDepth" type="Int">
+  Internal depth counter for recursive searches.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  createMusicAlbum(input: {
+    title: "Rumours"
+    releaseDate: "1977-02-04"
+    trackCount: 11
+    duration: 2374
+    label: "Warner Bros. Records"
+  }) {
+    id
+    title
+    trackCount
+    label
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+## Activity mutations
+
+### `rateMedia`
+
+Rates a media item on a 0–5 scale. Requires authentication.
+
+<ParamField path="body.mediaId" type="UUID" required>
+  The UUID of the media item to rate.
+</ParamField>
+
+<ParamField path="body.score" type="Float" required>
+  Rating score between 0 and 5.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  rateMedia(
+    mediaId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    score: 4.5
+  ) {
+    score
+    ratedAt
+    media {
+      id
+      title
+      averageRating
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `addToFavorites`
+
+Adds a media item to the authenticated user's favorites list. Returns `true` on success. Requires authentication.
+
+<ParamField path="body.mediaId" type="UUID" required>
+  The UUID of the media item to favorite.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  addToFavorites(mediaId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+}
+```
+
+</CodeGroup>
+
+---
+
+### `createActivity`
+
+Creates a tracking record for a media item — for example, marking that you started watching a show or finished reading a book. Requires authentication. Triggers an asynchronous recommendation rebuild for the user and their friends.
+
+<ParamField path="body.mediaId" type="UUID" required>
+  The UUID of the media item.
+</ParamField>
+
+<ParamField path="body.statusId" type="Int" required>
+  The activity status ID. See [Activity status IDs](/api/user-activity#activity-status-ids).
+</ParamField>
+
+<ParamField path="body.rating" type="Float">
+  Optional rating score.
+</ParamField>
+
+<ParamField path="body.review" type="String">
+  Optional review text.
+</ParamField>
+
+<ParamField path="body.startedAt" type="DateTime">
+  ISO 8601 datetime when you started the media.
+</ParamField>
+
+<ParamField path="body.finishedAt" type="DateTime">
+  ISO 8601 datetime when you finished the media.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  createActivity(input: {
+    mediaId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    statusId: 3
+    rating: 4.5
+    review: "One of the best films I have seen."
+    startedAt: "2024-01-10T20:00:00Z"
+    finishedAt: "2024-01-10T21:48:00Z"
+  }) {
+    id
+    status {
+      id
+      name
+    }
+    rating
+    review
+    finishedAt
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `updateActivity`
+
+Updates an existing activity record. Requires authentication.
+
+<ParamField path="body.id" type="UUID" required>
+  The UUID of the activity record to update.
+</ParamField>
+
+<ParamField path="body.statusId" type="Int">
+  New activity status ID.
+</ParamField>
+
+<ParamField path="body.rating" type="Float">
+  Updated rating.
+</ParamField>
+
+<ParamField path="body.review" type="String">
+  Updated review text.
+</ParamField>
+
+<ParamField path="body.startedAt" type="DateTime">
+  Updated start datetime.
+</ParamField>
+
+<ParamField path="body.finishedAt" type="DateTime">
+  Updated finish datetime.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  updateActivity(
+    id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+    input: {
+      statusId: 3
+      rating: 5.0
+      review: "Even better on a second watch."
+      finishedAt: "2024-06-15T23:00:00Z"
+    }
+  ) {
+    id
+    status {
+      id
+      name
+    }
+    rating
+    review
+    finishedAt
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+## Social mutations
+
+### `sendFriendRequest`
+
+Sends a friend request to another user. Requires authentication.
+
+<ParamField path="body.toUserID" type="UUID" required>
+  The UUID of the user to send the request to.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  sendFriendRequest(toUserID: "c3d4e5f6-a7b8-9012-cdef-123456789012") {
+    id
+    from {
+      id
+      name
+    }
+    to {
+      id
+      name
+    }
+    createdAt
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `acceptFriendRequest`
+
+Accepts an incoming friend request. Returns the new friend's user object. Requires authentication. Triggers an asynchronous recommendation rebuild for both users.
+
+<ParamField path="body.requestID" type="UUID" required>
+  The UUID of the friend request to accept.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  acceptFriendRequest(requestID: "d4e5f6a7-b8c9-0123-defa-234567890123") {
+    id
+    name
+    email
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+### `declineFriendRequest`
+
+Declines an incoming friend request. Returns `true` on success. Requires authentication.
+
+<ParamField path="body.requestID" type="UUID" required>
+  The UUID of the friend request to decline.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  declineFriendRequest(requestID: "d4e5f6a7-b8c9-0123-defa-234567890123")
+}
+```
+
+</CodeGroup>
+
+---
+
+### `removeFriend`
+
+Removes an existing friend connection. Returns `true` on success. Requires authentication.
+
+<ParamField path="body.friendID" type="UUID" required>
+  The UUID of the friend to remove.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Example
+mutation {
+  removeFriend(friendID: "e5f6a7b8-c9d0-1234-efab-345678901234")
+}
+```
+
+</CodeGroup>

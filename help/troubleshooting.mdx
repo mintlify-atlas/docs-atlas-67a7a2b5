@@ -1,0 +1,304 @@
+---
+title: "Troubleshooting"
+description: "Solutions to common problems when running NQ — backend startup failures, frontend errors, API issues, and database connection problems."
+---
+
+<Note>
+  Most issues come down to one of three things: missing or incorrect `.env` values, a service that isn't running, or stale cached files. Check those first before digging deeper.
+</Note>
+
+---
+
+## Backend
+
+<AccordionGroup>
+
+  <Accordion title="Backend won't start: missing .env file">
+    **Error:** `open .env: no such file or directory` or the server starts but immediately fails to connect to Neo4j.
+
+    **Cause:** You haven't created the `.env` file yet.
+
+    **Fix:**
+    ```bash
+    cd backend
+    cp .envtemplate .env
+    ```
+
+    Then open `.env` in an editor and fill in at least the Neo4j credentials. See [Environment Variables](/configuration/environment) for what each field expects.
+  </Accordion>
+
+  <Accordion title="Backend won't start: port 8080 already in use">
+    **Error:** `listen tcp :8080: bind: address already in use`
+
+    **Cause:** Another process is listening on port 8080.
+
+    **Fix — option 1:** Find and stop the process using port 8080.
+
+    ```bash
+    # macOS / Linux
+    lsof -i :8080
+    kill -9 <PID>
+    ```
+
+    **Fix — option 2:** Change NQ's port. Add this line to `backend/.env` and restart the backend:
+
+    ```bash
+    PORT=8081
+    ```
+  </Accordion>
+
+  <Accordion title="Backend won't start: Go not found">
+    **Error:** `command not found: go`
+
+    **Cause:** Go is not installed, or its binary is not on your `PATH`.
+
+    **Fix:**
+    1. Install Go from [go.dev/dl](https://go.dev/dl/). Use version 1.25.1 or newer.
+    2. Restart your terminal after installation.
+    3. Verify: `go version`
+  </Accordion>
+
+  <Accordion title="GraphQL Playground shows errors or won't load">
+    **Symptom:** Visiting `http://localhost:8080` shows an error page, a blank screen, or the playground loads but queries fail.
+
+    **Check these in order:**
+
+    1. **Is the backend running?** — You should see `Starting server on :8080` in the terminal where you ran `go run .`. If not, start it.
+
+    2. **Are you using HTTP, not HTTPS?** — The local server uses plain HTTP by default. Make sure the URL is `http://localhost:8080`, not `https://`.
+
+    3. **Is Neo4j reachable?** — A database connection error at startup causes resolver failures. Check the [Neo4j connection issues](#database) section below.
+
+    4. **Query syntax error?** — Use the playground's autocomplete (`Ctrl+Space`) and check the schema documentation panel on the right side of the playground.
+  </Accordion>
+
+</AccordionGroup>
+
+---
+
+## Database
+
+<AccordionGroup>
+
+  <Accordion title="Cannot connect to Neo4j">
+    **Error:** `Failed to connect to Neo4j` or `ServiceUnavailable: Could not perform discovery`
+
+    **Check these in order:**
+
+    **1. Verify your `.env` credentials:**
+    ```bash
+    NEO4J_URI=neo4j+s://<instance-id>.databases.neo4j.io  # Aura
+    # or
+    NEO4J_URI=neo4j://localhost:7687                       # local Docker
+    NEO4J_USERNAME=neo4j
+    NEO4J_PASSWORD=your-password
+    ```
+    Make sure there are no extra spaces, quotes, or trailing characters.
+
+    **2. Check the URI scheme:**
+
+    | Deployment | Correct URI |
+    |---|---|
+    | Neo4j Aura | `neo4j+s://...` |
+    | Local Docker | `neo4j://localhost:7687` |
+    | Neo4j Desktop | `bolt://localhost:7687` |
+
+    **3. Check that Neo4j is running:**
+    - **Aura:** Log in to [console.neo4j.io](https://console.neo4j.io) and confirm the instance status is **Running**.
+    - **Local Docker:** Run `docker compose ps` from the `backend/` directory. The `neo4j` service should show as `running`. If not, run `docker compose up -d`.
+  </Accordion>
+
+  <Accordion title="Authentication failed">
+    **Error:** `AuthenticationRateLimit` or `The client is unauthorized due to authentication failure`
+
+    **Cause:** The username or password in `.env` is wrong.
+
+    **Fix:**
+    - Double-check `NEO4J_USERNAME` and `NEO4J_PASSWORD` in `.env`.
+    - For Aura: the username is almost always `neo4j`. If you lost the generated password, reset it from the Aura console.
+    - For local Docker: the default credentials are `neo4j` / `testpass` (set by `NEO4J_AUTH: neo4j/testpass` in `docker-compose.yml`).
+    - Remove any surrounding quotes from the values — `.env` values should not be quoted.
+  </Accordion>
+
+  <Accordion title="Database not found">
+    **Error:** `DatabaseNotFound` or `Unable to get a routing table for database 'xyz'`
+
+    **Cause:** The `NEO4J_DATABASE` value in `.env` doesn't match an existing database.
+
+    **Fix:**
+    - For Aura: the database name is almost always `neo4j`. Leave `NEO4J_DATABASE=neo4j` or leave the field blank.
+    - For local Docker: open the Neo4j Browser at `http://localhost:7474`, run `:dbs` in the query bar, and use the name shown there.
+    - For Neo4j Desktop: check the database name in Neo4j Desktop — it is usually `neo4j` for a default installation.
+  </Accordion>
+
+  <Accordion title="Local Docker: connection refused on port 7687">
+    **Error:** `connect: connection refused` when using `neo4j://localhost:7687`
+
+    **Cause:** The Neo4j Docker container is not running.
+
+    **Fix:**
+    ```bash
+    cd backend
+    docker compose up -d
+    docker compose ps
+    ```
+
+    If the container shows as `exited`, check its logs:
+    ```bash
+    docker compose logs neo4j
+    ```
+
+    A common cause is Docker Desktop not being started. Launch Docker Desktop first, then run `docker compose up -d` again.
+  </Accordion>
+
+</AccordionGroup>
+
+---
+
+## Frontend
+
+<AccordionGroup>
+
+  <Accordion title="npm packages not installed">
+    **Error:** `Cannot find module 'expo'` or similar `Cannot find module` errors when running `npx expo start`.
+
+    **Fix:**
+    ```bash
+    cd frontend
+    npm install
+    ```
+
+    Wait for the install to complete before starting the dev server.
+  </Accordion>
+
+  <Accordion title="Metro bundler error">
+    **Error:** `Metro has encountered an error` or the app fails to load with a red error screen.
+
+    **Fix — clear the Metro cache:**
+    ```bash
+    npx expo start -c
+    ```
+
+    **Fix — full dependency reinstall (if cache clear doesn't help):**
+    ```bash
+    cd frontend
+    rm -rf node_modules
+    npm install
+    npx expo start -c
+    ```
+  </Accordion>
+
+  <Accordion title="Node.js version too old">
+    **Error:** Syntax errors during `npm install` or `npx expo start`, or a warning like `npm warn EBADENGINE`.
+
+    **Fix:** Update to Node.js 18 or newer.
+
+    Check your current version:
+    ```bash
+    node --version
+    ```
+
+    Download the LTS release from [nodejs.org](https://nodejs.org/).
+  </Accordion>
+
+  <Accordion title="App can't connect to the backend">
+    **Symptom:** The app loads but shows network errors, or GraphQL queries fail with a connection error.
+
+    **Check these in order:**
+
+    1. **Is the backend running?** — Open a terminal and run `cd backend && go run .`. You should see `Starting server on :8080`.
+
+    2. **Are you testing on a physical phone?** — Your phone and computer must be on the same Wi-Fi network. The app cannot reach `localhost` from your phone. You need to use your computer's local IP address (for example, `192.168.1.100`) in the app's API endpoint configuration.
+
+    3. **Are you testing in a simulator/emulator?** — Android emulators use `10.0.2.2` to reach the host machine instead of `localhost`. iOS simulators share the same network as the Mac and can use `localhost`.
+
+    4. **Is port 8080 accessible?** — Check that no firewall is blocking port 8080.
+  </Accordion>
+
+</AccordionGroup>
+
+---
+
+## API integrations
+
+<AccordionGroup>
+
+  <Accordion title="Integration not working: wrong or missing credentials">
+    **Symptom:** Syncing a service returns an error or produces no data.
+
+    **Fix:**
+    1. Open `backend/.env` and verify the credentials for the affected service.
+    2. Make sure there are no extra spaces, line breaks, or quote characters around the values.
+    3. Confirm the credential is active — API keys can expire or be revoked from the service's developer console.
+    4. Restart the backend after changing `.env` values: `go run .`
+  </Accordion>
+
+  <Accordion title="API rate limit exceeded">
+    **Symptom:** Errors mentioning `429 Too Many Requests`, `rate limit`, or `quota exceeded`.
+
+    **Cause:** You have made too many requests to a service's API in a short period.
+
+    **Fix:**
+    - Wait and try again. Most rate limits reset within minutes or after 24 hours.
+    - Avoid triggering multiple manual syncs in quick succession.
+    - For YouTube: the Data API v3 has a default quota of 10,000 units per day. Search operations cost 100 units each; detail lookups cost 1 unit each. If you exhaust the quota, it resets at midnight Pacific Time.
+  </Accordion>
+
+  <Accordion title="Token expired or OAuth flow failed">
+    **Symptom:** A service that was working before now returns `401 Unauthorized` or `token expired`.
+
+    **Fix:**
+    - Re-authorize the service through the app's integration settings.
+    - For Spotify and Twitch: OAuth tokens expire periodically. The app handles refresh automatically for most services; if it fails, disconnect and reconnect the service.
+    - For Apple Music: the developer token JWT you generated has an expiry date (maximum 6 months). If it has expired, generate a new one and update `APPLE_MUSIC_API_KEY` in `.env`.
+  </Accordion>
+
+  <Accordion title="Twitch / IGDB integration not working">
+    **Cause:** IGDB is owned by Twitch. Both services use the same Twitch application credentials.
+
+    **Fix:** Make sure both `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` are set in `.env`. A missing client secret is the most common cause of Twitch/IGDB auth failures.
+
+    Register or inspect your app at [dev.twitch.tv/console](https://dev.twitch.tv/console).
+  </Accordion>
+
+</AccordionGroup>
+
+---
+
+## Complete reset
+
+If you want to wipe everything and start fresh:
+
+<Steps>
+  <Step title="Stop both processes">
+    Press `Ctrl+C` in both the backend and frontend terminals.
+  </Step>
+  <Step title="Reset the database">
+    **Aura:** Log in to [console.neo4j.io](https://console.neo4j.io) and use the **Clear database** option, or delete the instance and create a new one.
+
+    **Local Docker:**
+    ```bash
+    cd backend
+    docker compose down -v
+    docker compose up -d
+    ```
+  </Step>
+  <Step title="Recreate your .env file">
+    ```bash
+    cd backend
+    cp .envtemplate .env
+    ```
+    Fill in your credentials again.
+  </Step>
+  <Step title="Restart the backend">
+    ```bash
+    go run .
+    ```
+  </Step>
+  <Step title="Restart the frontend">
+    ```bash
+    cd frontend
+    npx expo start -c
+    ```
+  </Step>
+</Steps>

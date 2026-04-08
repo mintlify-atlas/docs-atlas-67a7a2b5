@@ -1,0 +1,205 @@
+---
+title: "Recommendations"
+description: "Personalized media recommendations based on your activity and your friends' activity."
+---
+
+NQ generates recommendations for each user by analysing activity records and social connections. Recommendations are rebuilt asynchronously whenever you log activity or add a new friend.
+
+## Recommendation type
+
+<ResponseField name="id" type="UUID" required>
+  Unique identifier for the recommendation.
+</ResponseField>
+
+<ResponseField name="user" type="User" required>
+  The user this recommendation is for.
+</ResponseField>
+
+<ResponseField name="media" type="Media" required>
+  The recommended media item.
+</ResponseField>
+
+<ResponseField name="recommender" type="User">
+  The friend whose activity influenced this recommendation, if applicable. `null` for recommendations derived from your own activity patterns.
+</ResponseField>
+
+<ResponseField name="source" type="String">
+  A string describing how this recommendation was generated (e.g., which algorithm or data signal produced it).
+</ResponseField>
+
+<ResponseField name="score" type="Float">
+  A fitness score representing how well the recommended item matches your preferences. Higher scores indicate a stronger match. Scores are relative to each other within a user's recommendation list.
+</ResponseField>
+
+---
+
+## How recommendations are generated
+
+Recommendations are built from a graph traversal over your activity and your friends' activity. The score represents how closely a media item connects to things you have already watched, read, played, or listened to — based on shared creators, cast, genres, and other relationships in the graph.
+
+When a friend recommends something, that friend appears as the `recommender`. When the recommendation comes from your own activity graph, `recommender` is `null`.
+
+Recommendations are rebuilt in the background in two situations:
+
+- When you call `createActivity` — your recommendations and all your friends' recommendations are rebuilt.
+- When you or a friend calls `acceptFriendRequest` — both users' recommendations are rebuilt.
+
+---
+
+## Fetching recommendations
+
+Use `getRecommendations` to fetch the current user's personalised recommendation list. Requires authentication.
+
+<CodeGroup>
+
+```graphql Fetch all recommendations
+query {
+  getRecommendations {
+    id
+    media {
+      id
+      title
+      coverUrl
+      averageRating
+      ... on Movie {
+        runtime
+        genres {
+          name
+        }
+      }
+      ... on TVShow {
+        seasons
+        status
+      }
+      ... on Book {
+        pages
+        authors {
+          name
+        }
+      }
+    }
+    recommender {
+      id
+      name
+      avatarUrl
+    }
+    source
+    score
+  }
+}
+```
+
+```graphql Fetch recommendations with activity context
+query {
+  getRecommendations {
+    id
+    score
+    media {
+      id
+      title
+      myActivity {
+        status {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+## Related media
+
+Every media item exposes a `relatedMedia` field that returns other items connected to it through shared cast, crew, creators, or metadata relationships. This is separate from personalised recommendations — it reflects the graph structure rather than your preferences.
+
+<ParamField path="query.limit" type="Int">
+  Maximum number of related items to return.
+</ParamField>
+
+<CodeGroup>
+
+```graphql Fetch related media
+query {
+  media(id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890") {
+    id
+    title
+    relatedMedia(limit: 10) {
+      id
+      title
+      averageRating
+      coverUrl
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+## Tracking background search progress
+
+When you create a movie, TV show, book, or game with `searchDepth: 0` (or omit the field), NQ starts a background job that traverses connected media and adds them to the graph. This powers the `relatedMedia` field and improves recommendation quality.
+
+Use `recursiveSearchStatus` to poll whether that job has finished.
+
+### SearchStatus type
+
+<ResponseField name="state" type="SearchState" required>
+  The current state of the background search.
+</ResponseField>
+
+<ResponseField name="completedAt" type="DateTime">
+  ISO 8601 timestamp when the search completed. `null` if the search has not yet finished.
+</ResponseField>
+
+### SearchState enum
+
+| Value       | Meaning                                                 |
+| ----------- | ------------------------------------------------------- |
+| `IDLE`      | No search is running for this media item.               |
+| `RUNNING`   | The background search is currently in progress.         |
+| `COMPLETED` | The search finished and related media have been linked. |
+
+<CodeGroup>
+
+```graphql Poll search status
+query {
+  recursiveSearchStatus(mediaId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890") {
+    state
+    completedAt
+  }
+}
+```
+
+```graphql Create a movie and check its search status
+mutation {
+  createMovie(input: {
+    title: "The Shawshank Redemption"
+    releaseDate: "1994-09-23"
+    genres: ["Drama"]
+    cast: ["Tim Robbins", "Morgan Freeman"]
+  }) {
+    id
+    title
+  }
+}
+
+# Then poll with the returned ID:
+query {
+  recursiveSearchStatus(mediaId: "<returned-id>") {
+    state
+    completedAt
+  }
+}
+```
+
+</CodeGroup>
+
+<Tip>
+  Poll `recursiveSearchStatus` every few seconds after creating a media item. Once the state is `COMPLETED`, the `relatedMedia` field will be fully populated and recommendations will have been rebuilt.
+</Tip>

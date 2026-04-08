@@ -1,0 +1,197 @@
+---
+title: "Database Setup"
+description: "Set up the Neo4j graph database for NQ using Neo4j Aura (cloud) or a local Docker container."
+---
+
+NQ stores all media data, user preferences, and relationships in a [Neo4j](https://neo4j.com/) graph database. You can run Neo4j in the cloud for free or locally with Docker.
+
+## Choosing a deployment option
+
+<Tabs>
+  <Tab title="Neo4j Aura (recommended)">
+    Neo4j Aura is a fully managed cloud service with a permanent free tier. It requires no local installation and is the fastest way to get started.
+
+    **Pros:**
+    - Free tier available, no credit card required
+    - No installation or maintenance
+    - Automatic backups
+    - Accessible from any device
+
+    **Cons:**
+    - Requires an internet connection
+    - Free tier has storage limits (~200 MB)
+
+    <Steps>
+      <Step title="Create an Aura account">
+        Go to [neo4j.com/cloud/aura](https://neo4j.com/cloud/aura/) and click **Start Free**.
+      </Step>
+      <Step title="Create a free instance">
+        Click **Create Instance** and select the **Free** tier.
+      </Step>
+      <Step title="Save your credentials">
+        After the instance is created, Aura displays your credentials **once**. Download or copy them immediately:
+
+        - **Connection URI** — looks like `neo4j+s://xxxxx.databases.neo4j.io`
+        - **Username** — usually `neo4j`
+        - **Password** — auto-generated
+
+        <Warning>
+          You cannot retrieve the password again after this screen. If you lose it, you must reset it from the Aura console.
+        </Warning>
+      </Step>
+      <Step title="Wait for the instance to start">
+        Initial provisioning takes 1–2 minutes. The status changes to **Running** when ready.
+      </Step>
+      <Step title="Set environment variables">
+        Add your credentials to `backend/.env`:
+
+        ```bash
+        NEO4J_URI=neo4j+s://xxxxx.databases.neo4j.io
+        NEO4J_USERNAME=neo4j
+        NEO4J_PASSWORD=your-generated-password
+        NEO4J_DATABASE=neo4j
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Local Docker">
+    Run Neo4j locally using Docker Compose. This is useful for development, offline use, or when you want full control over your data.
+
+    **Pros:**
+    - No internet required after setup
+    - Full control over data and configuration
+    - Easy to reset or inspect
+
+    **Cons:**
+    - Requires Docker installed on your machine
+    - Uses local disk and memory resources
+
+    <Steps>
+      <Step title="Install Docker">
+        Download Docker Desktop from [docker.com](https://www.docker.com/products/docker-desktop/) and follow the installer for your operating system.
+      </Step>
+      <Step title="Start Neo4j">
+        From the `backend/` directory, run:
+
+        ```bash
+        docker compose up -d
+        ```
+
+        Docker pulls the `neo4j:latest` image on first run. The container starts in the background.
+      </Step>
+      <Step title="Verify Neo4j is running">
+        Open [http://localhost:7474](http://localhost:7474) in a browser. You should see the Neo4j Browser login page.
+
+        Log in with:
+        - **Username:** `neo4j`
+        - **Password:** `testpass`
+      </Step>
+      <Step title="Set environment variables">
+        Add these credentials to `backend/.env`:
+
+        ```bash
+        NEO4J_URI=neo4j://localhost:7687
+        NEO4J_USERNAME=neo4j
+        NEO4J_PASSWORD=testpass
+        NEO4J_DATABASE=neo4j
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+---
+
+## Docker Compose reference
+
+The `backend/docker-compose.yml` file defines a single Neo4j service:
+
+```yaml
+services:
+  neo4j:
+    image: neo4j:latest
+    ports:
+      - "7474:7474"   # Neo4j browser UI
+      - "7687:7687"   # Bolt protocol (used by the Go driver)
+    environment:
+      NEO4J_AUTH: neo4j/testpass
+    volumes:
+      - neo4j_data:/data
+
+volumes:
+  neo4j_data:
+```
+
+| Port | Purpose |
+|---|---|
+| `7474` | Neo4j Browser web interface |
+| `7687` | Bolt protocol — the Go driver connects here |
+
+Data is stored in the `neo4j_data` Docker volume, so it persists across container restarts. To wipe and start fresh, run `docker compose down -v`.
+
+---
+
+## Connection URI formats
+
+| Deployment | URI scheme | Example |
+|---|---|---|
+| Neo4j Aura | `neo4j+s://` | `neo4j+s://abc123.databases.neo4j.io` |
+| Local Docker / Desktop | `neo4j://` or `bolt://` | `neo4j://localhost:7687` |
+
+<Note>
+  The `neo4j+s://` scheme uses an encrypted connection (TLS). The `neo4j://` and `bolt://` schemes connect without encryption, which is fine for local development.
+</Note>
+
+---
+
+## Graph data model
+
+NQ uses a graph database because media recommendations are fundamentally about relationships — between users and the content they consume, between pieces of content that share creators or themes, and between platforms.
+
+### Core node types
+
+| Node label | Description |
+|---|---|
+| `User` | A registered NQ user |
+| `MediaItem` | A movie, TV show, book, game, album, or article |
+| `Creator` | An actor, director, author, developer, or artist |
+| `Platform` | A streaming service, store, or distribution channel |
+| `Tag` | A genre, theme, keyword, or other categorization |
+
+### Relationships
+
+Nodes are connected by typed relationships that power recommendation queries:
+
+- A `User` **consumed** a `MediaItem` (watched, played, read, listened to)
+- A `MediaItem` **has creator** a `Creator`
+- A `MediaItem` **available on** a `Platform`
+- A `MediaItem` **tagged with** a `Tag`
+- A `User` **prefers** certain `Tag` or `Creator` nodes (derived from consumption history)
+
+The graph structure enables queries like "find media items that share multiple creators and tags with things this user has consumed and rated highly" — queries that are natural in Cypher but difficult in relational SQL.
+
+---
+
+## Managing your database
+
+### Stop the local container
+
+```bash
+docker compose down
+```
+
+Data is preserved in the `neo4j_data` volume.
+
+### Stop and delete all data
+
+```bash
+docker compose down -v
+```
+
+<Warning>
+  The `-v` flag deletes the Docker volume and all Neo4j data permanently. Use this only when you want a complete reset.
+</Warning>
+
+### Reset Aura data
+
+To reset a Neo4j Aura instance, log in to [console.neo4j.io](https://console.neo4j.io), open your instance, and use the **Clear database** option. This removes all nodes and relationships but keeps the instance running.

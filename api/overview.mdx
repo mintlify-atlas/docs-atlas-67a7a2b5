@@ -1,0 +1,83 @@
+---
+title: "API Overview"
+description: "NQ exposes a single GraphQL endpoint for all queries and mutations."
+---
+
+NQ uses GraphQL, which means every operation — whether you're reading data or writing it — goes through a single HTTP endpoint. Instead of many different URLs for different resources, you send a POST request with a query that describes exactly the data you want.
+
+## Endpoint
+
+```
+POST http://localhost:8080
+```
+
+All requests use `Content-Type: application/json`. The request body contains your GraphQL query or mutation as a JSON string.
+
+## How GraphQL works
+
+Unlike REST, GraphQL uses a single endpoint for all operations. You specify the exact fields you want in your query, and the API returns only those fields. This means:
+
+- No over-fetching — you get exactly what you ask for
+- No under-fetching — you can request nested data in a single round trip
+- A typed schema describes every field, argument, and return type
+
+There are two operation types:
+
+- **Query** — read data (equivalent to GET in REST)
+- **Mutation** — write or modify data (equivalent to POST, PUT, DELETE in REST)
+
+## Interactive playground
+
+When the backend is running, visiting `http://localhost:8080` in your browser opens the GraphQL playground. The playground gives you:
+
+- A built-in schema explorer that documents every type, field, and argument
+- Autocomplete as you type queries
+- A "Headers" tab where you can supply the `Authorization` header for authenticated requests
+- Instant feedback on query errors
+
+## Making a request
+
+Send a POST request with a JSON body containing a `query` field:
+
+<CodeGroup>
+
+```graphql Basic query
+query {
+  me {
+    id
+    name
+    email
+  }
+}
+```
+
+```json Request body
+{
+  "query": "query { me { id name email } }"
+}
+```
+
+</CodeGroup>
+
+## API reference sections
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/api/authentication">
+    How to obtain a token and authenticate requests.
+  </Card>
+  <Card title="Queries" icon="magnifying-glass" href="/api/queries">
+    All available read operations, grouped by category.
+  </Card>
+  <Card title="Mutations" icon="pen" href="/api/mutations">
+    All available write operations, grouped by category.
+  </Card>
+  <Card title="Media types" icon="film" href="/api/media-types">
+    The Media interface and all five concrete types.
+  </Card>
+  <Card title="User activity" icon="list-check" href="/api/user-activity">
+    Tracking watch status, ratings, and reviews.
+  </Card>
+  <Card title="Recommendations" icon="star" href="/api/recommendations">
+    Fetching and understanding personalized recommendations.
+  </Card>
+</CardGroup>

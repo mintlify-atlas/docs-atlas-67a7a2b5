@@ -1,0 +1,93 @@
+---
+title: "Books & Articles"
+description: "Look up book metadata through Open Library (no credentials needed) and sync your Instapaper reading list."
+---
+
+NQ supports two integrations in this category: **Open Library** for book metadata and **Instapaper** for saved articles. Open Library requires no credentials and is always available. Instapaper requires your account username and password.
+
+<AccordionGroup>
+
+  <Accordion title="Open Library">
+
+    Open Library is a free, open book database maintained by the Internet Archive. NQ uses it as a Metadata Provider for books — it resolves ISBNs and title searches into structured book records.
+
+    **No credentials are required.** Open Library is a public API with no authentication.
+
+    **Data provided:**
+    - Book title, authors, publishers
+    - ISBN-10 and ISBN-13 (prefers ISBN-13)
+    - Publication date and page count
+    - Cover images (small, medium, large)
+    - Subjects (topics, places, people, time periods)
+    - Language information (ISO 639 codes)
+
+    ### How It Works
+
+    Open Library lookup follows this priority:
+
+    1. **ISBN provided** — NQ fetches the record directly by ISBN. If the result is in the wrong language, NQ searches for the title in the requested language and re-fetches.
+    2. **No ISBN** — NQ searches by title (and optionally author or year) to find the best matching ISBN, then fetches the full record.
+
+    When searching by title, NQ applies **title normalization** to improve results: subtitles after a colon are used as the search term instead of the full title, which tends to return more accurate matches.
+
+    ### API Endpoints Used
+
+    | Purpose | Endpoint |
+    |---|---|
+    | ISBN lookup | `https://openlibrary.org/api/books` |
+    | Title/author search | `https://openlibrary.org/search.json` |
+    | Cover images | `https://covers.openlibrary.org/b/id/{id}-{size}.jpg` |
+
+    ### Environment Variables
+
+    None. Open Library requires no configuration.
+
+    <Note>
+      Open Library ISBN lookups prefer ISBN-13 over ISBN-10 when both are available. If a book has neither, it will be skipped during search.
+    </Note>
+
+  </Accordion>
+
+  <Accordion title="Instapaper">
+
+    Instapaper syncs your saved bookmarks and reading progress using the [Instapaper API](https://www.instapaper.com/api). Authentication uses Basic Auth with your Instapaper account credentials.
+
+    **Data synced:**
+    - Saved bookmarks (title, URL, description)
+    - Reading progress (as a 0.0–1.0 float)
+    - Reading status (derived from progress: `unread`, `in_progress`, or `completed`)
+    - Starred status
+    - Timestamps (when the bookmark was saved, when it was last read)
+
+    **Authentication:** Basic Auth using your Instapaper username and password. These are your existing Instapaper account credentials — no API application registration is required.
+
+    ### Getting Credentials
+
+    Use your existing Instapaper account. If you do not have an account, create one at [instapaper.com](https://www.instapaper.com/).
+
+    ### Environment Variables
+
+    ```bash
+    INSTAPAPER_USERNAME=your_instapaper_username
+    INSTAPAPER_PASSWORD=your_instapaper_password
+    ```
+
+    ### Reading Progress Tracking
+
+    Instapaper reports reading progress as a decimal between `0.0` and `1.0`. NQ maps this to a reading status:
+
+    | Progress Value | Status |
+    |---|---|
+    | `0.0` | `unread` |
+    | `> 0.0` and `< 1.0` | `in_progress` |
+    | `>= 1.0` | `completed` |
+
+    NQ also records the timestamp of the last progress update (`last_read_at`) alongside the timestamp when the bookmark was first saved (`added_at`).
+
+    <Warning>
+      Instapaper's API uses Basic Auth over HTTPS. Keep your `INSTAPAPER_USERNAME` and `INSTAPAPER_PASSWORD` values in your `.env` file and ensure the file is not committed to version control.
+    </Warning>
+
+  </Accordion>
+
+</AccordionGroup>

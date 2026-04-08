@@ -1,0 +1,210 @@
+---
+title: "Environment Variables"
+description: "Configure NQ by setting up your .env file with database credentials, API keys, and server settings."
+---
+
+The backend reads all configuration from a `.env` file in the `backend/` directory. A template is included to get you started.
+
+## Initial setup
+
+<Steps>
+  <Step title="Copy the template">
+    ```bash
+    cd backend
+    cp .envtemplate .env
+    ```
+  </Step>
+  <Step title="Open the file in an editor">
+    ```bash
+    # macOS / Linux
+    nano .env
+
+    # Or open with any text editor you prefer
+    ```
+  </Step>
+  <Step title="Fill in your values">
+    Work through each section below. At minimum, you need the Neo4j credentials. All API integration keys are optional.
+  </Step>
+  <Step title="Start the server">
+    ```bash
+    go run .
+    ```
+    The server starts on port `8080` by default.
+  </Step>
+</Steps>
+
+<Warning>
+  Never commit `.env` to version control. It is already listed in `.gitignore`, but take care when copying files or creating archives.
+</Warning>
+
+---
+
+## Neo4j
+
+These variables are **required**. The backend will not start without a working database connection.
+
+| Variable | Required | Description |
+|---|---|---|
+| `NEO4J_URI` | Yes | Connection URI for your Neo4j instance |
+| `NEO4J_USERNAME` | Yes | Database username (usually `neo4j`) |
+| `NEO4J_PASSWORD` | Yes | Database password |
+| `NEO4J_DATABASE` | No | Database name. Leave blank to use the default (`neo4j`) |
+| `AURA_INSTANCEID` | No | Neo4j Aura instance ID (informational, not used by the driver) |
+| `AURA_INSTANCENAME` | No | Neo4j Aura instance name (informational, not used by the driver) |
+
+**URI formats by deployment type:**
+
+<Tabs>
+  <Tab title="Neo4j Aura (cloud)">
+    ```bash
+    NEO4J_URI=neo4j+s://<instance-id>.databases.neo4j.io
+    NEO4J_USERNAME=neo4j
+    NEO4J_PASSWORD=<generated-password>
+    NEO4J_DATABASE=neo4j
+    ```
+  </Tab>
+  <Tab title="Local Docker">
+    ```bash
+    NEO4J_URI=neo4j://localhost:7687
+    NEO4J_USERNAME=neo4j
+    NEO4J_PASSWORD=testpass
+    NEO4J_DATABASE=neo4j
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Server
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `PORT` | No | `8080` | TCP port the HTTP server listens on |
+| `ENV` | No | `development` | Runtime environment. Accepted values: `development`, `staging`, `production` |
+
+---
+
+## TLS / HTTPS
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `ENABLE_TLS` | No | `false` | Set to `true` to serve over HTTPS |
+| `TLS_CERT_FILE` | No | — | Path to the TLS certificate file |
+| `TLS_KEY_FILE` | No | — | Path to the TLS private key file |
+
+<Note>
+  For local development, leave `ENABLE_TLS=false`. TLS is only needed when deploying to a public server.
+</Note>
+
+---
+
+## CORS
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `ALLOWED_ORIGINS` | No | `http://localhost:8081,http://localhost:19000` | Comma-separated list of allowed CORS origins |
+
+The defaults cover the standard Expo development server ports. Add your production domain when deploying.
+
+---
+
+## Auth0 JWT validation
+
+These variables enable JWT-based authentication. Leave them blank during local development if you are not using Auth0.
+
+| Variable | Required | Description |
+|---|---|---|
+| `AUTH_JWT_ISSUER` | No | Auth0 tenant issuer URL (e.g. `https://your-tenant.us.auth0.com/`) |
+| `AUTH_JWT_AUDIENCE` | No | API audience identifier configured in Auth0 |
+| `AUTH_JWT_JWKS_URL` | No | JWKS endpoint for public key retrieval |
+
+---
+
+## Spotify
+
+| Variable | Required | Description |
+|---|---|---|
+| `SPOTIFY_CLIENT_ID` | No | OAuth 2.0 client ID from the Spotify developer dashboard |
+| `SPOTIFY_CLIENT_SECRET` | No | OAuth 2.0 client secret from the Spotify developer dashboard |
+
+Get credentials at [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard). Create a new application and copy the client ID and secret.
+
+---
+
+## Apple Music
+
+| Variable | Required | Description |
+|---|---|---|
+| `APPLE_MUSIC_API_KEY` | No | JWT developer token for the MusicKit API |
+
+<Warning>
+  Apple Music API access requires an Apple Developer Program membership ($99/year). You must create a MusicKit identifier and private key, then generate a signed JWT developer token.
+</Warning>
+
+---
+
+## YouTube
+
+| Variable | Required | Description |
+|---|---|---|
+| `YOUTUBE_API_KEY` | No | Google API key with YouTube Data API v3 enabled |
+
+This key is used for both YouTube video data and YouTube Music. Create a key at [console.cloud.google.com](https://console.cloud.google.com/), enable the YouTube Data API v3, and generate an API key credential.
+
+<Note>
+  The YouTube Data API has a default quota of 10,000 units per day. Search operations cost 100 units each; video detail lookups cost 1 unit each.
+</Note>
+
+---
+
+## Twitch
+
+| Variable | Required | Description |
+|---|---|---|
+| `TWITCH_CLIENT_ID` | No | OAuth 2.0 client ID from the Twitch developer console |
+| `TWITCH_CLIENT_SECRET` | No | OAuth 2.0 client secret from the Twitch developer console |
+
+Register an application at [dev.twitch.tv/console](https://dev.twitch.tv/console). These credentials are also used for IGDB (Internet Game Database), which Twitch owns.
+
+---
+
+## Steam
+
+| Variable | Required | Description |
+|---|---|---|
+| `STEAM_API_KEY` | No | Steam Web API key |
+
+Request a key at [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey). Each user also provides their own Steam ID when linking their account.
+
+---
+
+## Instapaper
+
+| Variable | Required | Description |
+|---|---|---|
+| `INSTAPAPER_USERNAME` | No | Your Instapaper account email address |
+| `INSTAPAPER_PASSWORD` | No | Your Instapaper account password |
+
+Instapaper uses Basic Auth with your regular account credentials. No developer registration is required.
+
+---
+
+## Summary: required vs optional
+
+| Category | Required for startup |
+|---|---|
+| Neo4j (`NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`) | **Yes** |
+| Server (`PORT`, `ENV`) | No — defaults apply |
+| TLS | No — disabled by default |
+| CORS (`ALLOWED_ORIGINS`) | No — defaults apply |
+| Auth0 JWT | No — auth validation skipped if unset |
+| Spotify | No |
+| Apple Music | No |
+| YouTube | No |
+| Twitch / IGDB | No |
+| Steam | No |
+| Instapaper | No |
+
+<Tip>
+  You only need to configure the integrations you plan to use. NQ starts successfully with only the Neo4j variables set and skips any integration whose credentials are missing.
+</Tip>

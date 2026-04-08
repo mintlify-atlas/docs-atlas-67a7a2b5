@@ -1,80 +1,137 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "Quick start"
+description: "Get from zero to a running NQ instance and your first recommendation in minutes."
 ---
 
-## Get started in three steps
+This guide walks you from a fresh machine to a working NQ instance — Neo4j running, the Go backend serving GraphQL, and the mobile app open on your device.
 
-Get your documentation site running locally and make your first customization.
+<Tip>
+  NQ requires both the backend and frontend running simultaneously. Open two terminal windows before you begin: one for the backend and one for the frontend.
+</Tip>
 
-### Step 1: Set up your local environment
+---
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+<Steps>
 
-### Step 2: Deploy your changes
+<Step title="Clone the repository">
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+Clone NQ from GitHub and move into the project directory:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+```bash
+git clone https://github.com/grillinr/nq.git && cd nq
+```
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+</Step>
 
-### Step 3: Go live
+<Step title="Start Neo4j">
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+NQ ships a `docker-compose.yml` that starts a local Neo4j instance. From the root of the repository, run:
+
+```bash
+docker compose -f backend/docker-compose.yml up -d
+```
+
+This starts Neo4j with the Bolt port on `7687` and the browser UI at [http://localhost:7474](http://localhost:7474). The default credentials are `neo4j` / `testpass`.
+
+</Step>
+
+<Step title="Configure the backend">
+
+Copy the environment template to create your `.env` file:
+
+```bash
+cp backend/.envtemplate backend/.env
+```
+
+Open `backend/.env` in a text editor and fill in the Neo4j credentials for the Docker instance you just started:
+
+```bash
+NEO4J_URI=neo4j://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=testpass
+NEO4J_DATABASE=neo4j
+```
+
+Leave the API key fields blank for now. You can add them later when you connect services like Spotify or Steam.
+
+</Step>
+
+<Step title="Start the backend">
+
+Navigate to the `backend/` directory and start the server:
+
+```bash
+cd backend && go run .
+```
+
+After a few seconds you should see:
+
+```
+connect to http://localhost:8080/ for GraphQL playground
+WARNING: TLS is disabled. Set ENABLE_TLS=true for production
+```
+
+Open [http://localhost:8080](http://localhost:8080) in your browser. You should see the **GraphQL Playground** — this confirms the backend is connected to Neo4j and ready to accept queries.
+
+</Step>
+
+<Step title="Start the frontend">
+
+Open a **second** terminal window. Navigate to the `frontend/` directory, install dependencies, and start Expo:
+
+```bash
+cd frontend && npm install && npx expo start
+```
+
+Metro Bundler will start and display a QR code along with an interactive menu.
+
+</Step>
+
+<Step title="Open the app">
+
+Scan the QR code shown in the Expo terminal using the **Expo Go** app on your phone (available free on the App Store and Google Play). Your phone must be on the same Wi-Fi network as your computer.
+
+The app will bundle and open. On subsequent launches the bundle will be faster.
+
+**Alternatives:**
+- Press `a` in the Expo terminal to open an Android emulator (requires Android Studio).
+- Press `i` to open the iOS Simulator on Mac (requires Xcode).
+
+</Step>
+
+<Step title="Run your first query">
+
+With the backend running, open the GraphQL Playground at [http://localhost:8080](http://localhost:8080) and run the following query to verify your connection end-to-end:
+
+```graphql
+query {
+  me {
+    id
+    name
+    email
+  }
+}
+```
+
+Click the **Play** button. If you are authenticated, the response will contain your user details. If you see the response without errors, NQ is working correctly.
+
+</Step>
+
+<Step title="Connect a service">
+
+To start seeing personalized recommendations, connect at least one media service by adding its API keys to `backend/.env`. See [Connecting services](/guides/connecting-services) for step-by-step instructions for Spotify, Steam, YouTube, and more.
+
+</Step>
+
+</Steps>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Connect your services" icon="plug" href="/guides/connecting-services">
+    Add API keys for Spotify, Steam, YouTube, and other services to start syncing your media history.
+  </Card>
+  <Card title="GraphQL API reference" icon="code" href="/api-reference">
+    Explore available queries, mutations, and data models in the full API reference.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

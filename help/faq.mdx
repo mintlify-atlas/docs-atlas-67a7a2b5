@@ -1,0 +1,282 @@
+---
+title: "FAQ"
+description: "Answers to common questions about NQ — what it is, how to set it up, which API keys you need, and how recommendations work."
+---
+
+## General
+
+<AccordionGroup>
+  <Accordion title="What is NQ?">
+    NQ (Next in Queue) is a smart media recommendation system that helps you decide what to watch, play, read, or listen to next. It connects to your accounts on services like Spotify, Steam, YouTube, and more, builds a graph of your media consumption, and suggests content you're likely to enjoy.
+  </Accordion>
+
+  <Accordion title="Who is NQ for?">
+    NQ is designed for anyone who:
+
+    - Has trouble deciding what to watch, play, or read next
+    - Uses multiple streaming and media services
+    - Wants personalized recommendations based on their actual preferences
+    - Enjoys discovering new content similar to what they already like
+  </Accordion>
+
+  <Accordion title="What platforms does NQ support?">
+    NQ currently integrates with:
+
+    - **Music** — Spotify, Apple Music, YouTube Music
+    - **Gaming** — Steam, Twitch
+    - **Video** — YouTube, movies and TV via TMDB
+    - **Books** — Open Library
+    - **Articles** — Instapaper
+  </Accordion>
+
+  <Accordion title="Is NQ free?">
+    Yes. NQ is free and open source under the MIT license. Some external services it connects to may require their own subscriptions (for example, Spotify Premium or a Steam game library), but NQ itself has no cost.
+  </Accordion>
+
+  <Accordion title="Is there a hosted version I can use without installing anything?">
+    Not currently. NQ is designed for self-hosting so your data stays on your own infrastructure. A hosted version may be considered in the future.
+  </Accordion>
+
+  <Accordion title="Will there be a web interface?">
+    NQ currently focuses on the mobile app, but the GraphQL API is already built to support any client. A web interface is possible.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Installation
+
+<AccordionGroup>
+  <Accordion title="What do I need to install before running NQ?">
+    Three things:
+
+    1. **Go 1.25.1+** — powers the backend server. Download from [go.dev/dl](https://go.dev/dl/).
+    2. **Node.js 18+** — runs the mobile app development server. Download from [nodejs.org](https://nodejs.org/).
+    3. **Neo4j** — the graph database. Use the free cloud tier (Neo4j Aura) or run it locally with Docker.
+
+    See the [Quickstart](/quickstart) guide for step-by-step instructions.
+  </Accordion>
+
+  <Accordion title="Which Neo4j option should I use — cloud or local?">
+    **Neo4j Aura (cloud)** is recommended for most users:
+    - Free tier available, no credit card required
+    - No installation or maintenance
+    - Automatic backups
+    - Works from any network
+
+    **Local Docker** is better for developers or offline use:
+    - Full control over data
+    - No internet required after setup
+    - Easy to reset and inspect
+
+    See [Database Setup](/configuration/database) for setup instructions for both options.
+  </Accordion>
+
+  <Accordion title="How long does installation take?">
+    Typical times:
+
+    - Installing prerequisites (Go, Node.js, Neo4j): 15–30 minutes
+    - Setting up the backend: 10–15 minutes
+    - Setting up the frontend: 5–10 minutes
+    - Getting API keys: 5–60 minutes depending on how many services you want
+
+    Total: 30 minutes to 2 hours depending on your experience level.
+  </Accordion>
+
+  <Accordion title="Is NQ too technical for non-developers?">
+    NQ currently requires some technical setup — installing software, running commands in a terminal, and configuring API keys. If you're comfortable following step-by-step instructions and have used a command line before, you should be able to get it running. Future versions will aim to simplify the process.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## API keys and configuration
+
+<AccordionGroup>
+  <Accordion title="Do I need all the API keys to use NQ?">
+    No. NQ works with whatever services you want to connect. You only need API keys for the integrations you plan to use. The system starts and runs normally with only the Neo4j database credentials set — missing integration credentials are simply skipped.
+  </Accordion>
+
+  <Accordion title="Where do I get API keys?">
+    Each service has its own registration process:
+
+    | Service | Where to register |
+    |---|---|
+    | Spotify | [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) |
+    | YouTube | [console.cloud.google.com](https://console.cloud.google.com/) (enable YouTube Data API v3) |
+    | Twitch / IGDB | [dev.twitch.tv/console](https://dev.twitch.tv/console) |
+    | Steam | [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey) |
+    | Apple Music | [developer.apple.com](https://developer.apple.com/) (requires paid membership) |
+    | TMDB | [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) |
+    | Instapaper | Use your regular Instapaper account credentials — no separate key needed |
+    | Open Library | No credentials required |
+  </Accordion>
+
+  <Accordion title="Do I have to pay for API access?">
+    Most APIs NQ uses offer free tiers sufficient for personal use:
+
+    - **Free** — Open Library, YouTube, Spotify, Steam, IGDB, TMDB
+    - **Requires Apple Developer Program** — Apple Music ($99/year membership)
+    - **Free with account** — Instapaper (uses your regular account login)
+  </Accordion>
+
+  <Accordion title="Where are my API keys stored?">
+    Your API keys are stored locally in the `backend/.env` file on your own computer. This file is listed in `.gitignore` by default and should never be shared or committed to version control. Your media data is stored in your own Neo4j database — either on your computer or in your private Aura cloud instance.
+  </Accordion>
+
+  <Accordion title="What is the .env file and how do I set it up?">
+    The `.env` file is a plain-text configuration file that stores your database credentials and API keys. To create it:
+
+    ```bash
+    cd backend
+    cp .envtemplate .env
+    ```
+
+    Then open `.env` in any text editor and fill in your values. See [Environment Variables](/configuration/environment) for a full reference of every setting.
+  </Accordion>
+
+  <Accordion title="Can I use just a few services and add more later?">
+    Yes. Start with one or two services you use most and add more whenever you want. Restart the backend after adding new credentials for them to take effect.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Usage
+
+<AccordionGroup>
+  <Accordion title="How do I start NQ after installation?">
+    You need two terminal windows running simultaneously:
+
+    **Terminal 1 — backend:**
+    ```bash
+    cd backend
+    go run .
+    ```
+
+    **Terminal 2 — frontend:**
+    ```bash
+    cd frontend
+    npx expo start
+    ```
+
+    Then open the app on your phone using the Expo Go app, or press `a` for Android emulator or `i` for iOS simulator.
+  </Accordion>
+
+  <Accordion title="How does NQ make recommendations?">
+    NQ builds a graph of your media consumption and traverses it to find new content:
+
+    1. It syncs your activity from connected services (what you've watched, played, listened to, saved).
+    2. It enriches each item with metadata — genres, creators, themes, and more.
+    3. It stores everything as nodes and relationships in the Neo4j graph database.
+    4. When generating recommendations, it calculates fitness scores for candidate items based on how strongly they connect to things you've already consumed and enjoyed.
+  </Accordion>
+
+  <Accordion title="Can I use NQ without the mobile app?">
+    Yes. The backend exposes a GraphQL API directly accessible at `http://localhost:8080`. The built-in GraphQL Playground lets you run queries and explore the schema without the mobile app. This is useful for developers or if you want to build your own interface.
+  </Accordion>
+
+  <Accordion title="How often does NQ sync my data?">
+    You can trigger manual syncs through the app, or the system can sync periodically. The frequency is configurable. The first sync may take longer because it downloads your full library — subsequent syncs only update changes.
+  </Accordion>
+
+  <Accordion title="Does NQ work offline?">
+    The backend needs an internet connection to sync from external services. Once data is synced into your Neo4j database, you can query it offline. The mobile app requires a connection to your backend server.
+  </Accordion>
+
+  <Accordion title="Why is the first sync slow?">
+    The first sync downloads your full library from each connected service. Large libraries (for example, 1,000+ games on Steam) take time to process, and API rate limits slow down requests to avoid overwhelming external services. This is expected — subsequent syncs are much faster since they only fetch changes.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Privacy and data
+
+<AccordionGroup>
+  <Accordion title="What data does NQ collect?">
+    NQ only collects data you explicitly authorize:
+
+    - Your media consumption history from connected services
+    - Public metadata about media items (titles, descriptions, genres, etc.)
+    - Your preferences and interactions within the app
+
+    NQ is self-hosted — all your data stays on your own infrastructure.
+  </Accordion>
+
+  <Accordion title="Does NQ share my data with anyone?">
+    No. NQ runs entirely on your own computer or infrastructure. It does not send your data to any third-party servers, except when syncing from the services you have explicitly authorized (Spotify, Steam, etc.).
+  </Accordion>
+
+  <Accordion title="Is my activity tracked or monitored?">
+    No. There is no analytics, tracking, or telemetry built into NQ. It is completely private and runs locally.
+  </Accordion>
+
+  <Accordion title="Can I delete my data?">
+    Yes. Since you control the database:
+
+    - Delete specific items through the GraphQL API
+    - Wipe the entire database to remove all data (see [Database Setup](/configuration/database))
+    - Stop using NQ at any time and delete the installation
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Development
+
+<AccordionGroup>
+  <Accordion title="How do I run the tests?">
+    **Backend:**
+    ```bash
+    cd backend
+    go test ./...
+    ```
+
+    **Frontend (lint and type check):**
+    ```bash
+    cd frontend
+    npm run lint
+    npx tsc --noEmit
+    ```
+  </Accordion>
+
+  <Accordion title="Where is the API documentation?">
+    The GraphQL API is self-documenting. Start the backend with `go run .` in the `backend/` directory, then visit `http://localhost:8080` to explore the interactive schema documentation in the GraphQL Playground.
+  </Accordion>
+
+  <Accordion title="Can I contribute to NQ?">
+    Yes. NQ is open source. Submit issues or pull requests on the GitHub repository.
+  </Accordion>
+
+  <Accordion title="Can I add support for a new service?">
+    Yes. The integration framework is designed to be extensible. Look at the existing integrations in `backend/integrations/` for examples. You need to:
+
+    1. Implement the `Integration` interface
+    2. Add configuration for API credentials
+    3. Map the service's data to NQ's media model
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Getting more help
+
+<AccordionGroup>
+  <Accordion title="Where can I get help if my question isn't answered here?">
+    - Review the [Troubleshooting](/help/troubleshooting) page for common issues and fixes
+    - Check [Environment Variables](/configuration/environment) for configuration reference
+    - See [Database Setup](/configuration/database) for database-specific help
+    - Submit an issue on the GitHub repository with a description of the problem, steps to reproduce, and any error messages
+  </Accordion>
+
+  <Accordion title="How do I report a bug or request a feature?">
+    Submit a GitHub issue with:
+
+    - Description of the problem or feature
+    - Steps to reproduce (for bugs)
+    - Expected vs actual behavior (for bugs)
+    - Error messages, if any
+    - Your environment — OS, Go version, Node version
+  </Accordion>
+</AccordionGroup>

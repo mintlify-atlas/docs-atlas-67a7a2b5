@@ -1,0 +1,106 @@
+---
+title: "Video Integrations"
+description: "Connect YouTube Data API and TMDB to sync video content and enrich movies and TV shows with detailed metadata."
+---
+
+NQ supports two video integrations. **YouTube Data API** is a User Data Integration that syncs video content and statistics. **TMDB (The Movie Database)** is a Metadata Provider that enriches movie and TV show entries with cast, genres, poster art, and more.
+
+<AccordionGroup>
+
+  <Accordion title="YouTube Data API v3">
+
+    NQ uses the YouTube Data API v3 to fetch video metadata and statistics. The integration currently works with publicly available video data. Accessing user-specific data (liked videos, subscriptions) requires a separate OAuth 2.0 user flow, which is not yet implemented.
+
+    **Data synced:**
+    - Video metadata (title, description, channel, publication date)
+    - View counts, like counts, comment counts
+    - Thumbnails (high-resolution preferred)
+    - Duration
+
+    **Authentication:** API Key. You create a key in Google Cloud Console and enable the YouTube Data API v3.
+
+    ### Getting Credentials
+
+    1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+    2. Create a project or select an existing one.
+    3. In **APIs & Services > Library**, search for **YouTube Data API v3** and enable it.
+    4. Go to **APIs & Services > Credentials** and click **Create credentials > API key**.
+    5. Copy the generated key.
+    6. Optionally restrict the key to the YouTube Data API v3 in the key settings.
+
+    ### Environment Variables
+
+    ```bash
+    YOUTUBE_API_KEY=your_google_api_key
+    ```
+
+    <Note>
+      This same key is also used by the YouTube Music integration. Configuring `YOUTUBE_API_KEY` once enables both integrations.
+    </Note>
+
+    ### Quota and Rate Limits
+
+    The YouTube Data API v3 uses a unit-based quota system. The default daily quota is **10,000 units**, shared across all YouTube API usage (including YouTube Music).
+
+    | Operation | Quota Cost |
+    |---|---|
+    | Search (`/search`) | 100 units |
+    | Video details (`/videos`) | 1 unit per video |
+    | Default daily quota | 10,000 units |
+
+    <Warning>
+      Search requests are expensive — each search costs 100 units from your daily 10,000-unit budget. If NQ is making frequent searches, you may hit the daily limit quickly. Monitor usage in **Google Cloud Console > APIs & Services > Quotas** and request a quota increase if needed.
+    </Warning>
+
+  </Accordion>
+
+  <Accordion title="TMDB (The Movie Database)">
+
+    TMDB provides comprehensive metadata for movies and TV shows. It is a Metadata Provider — it does not sync user activity, but enriches movie and TV entries that NQ already knows about.
+
+    **Data provided:**
+    - Movie and TV show details (title, overview, release dates, runtime)
+    - Genres, production companies, production countries
+    - Budget and box office revenue (movies)
+    - Full cast and crew credits (with character names, roles, and TMDB person IDs)
+    - Poster images and artwork
+    - Language-specific search results
+
+    **Authentication:** API Read Access Token (v4 Bearer Token). This is distinct from the older v3 API key — NQ uses the v4 Read Access Token.
+
+    ### Getting Credentials
+
+    1. Create a free account at [themoviedb.org](https://www.themoviedb.org/).
+    2. Go to **Settings > API** in your account.
+    3. Request API access. For most uses, the default access level is sufficient.
+    4. Copy the **API Read Access Token** (labeled as the v4 token — it begins with `ey`).
+
+    ### Environment Variables
+
+    Add your TMDB Read Access Token to `backend/.env`:
+
+    ```bash
+    TMDB_API_READ_ACCESS_TOKEN=your_bearer_token
+    ```
+
+    <Note>
+      `TMDB_API_READ_ACCESS_TOKEN` is not included in the default `.envtemplate`. Add it manually to your `.env` file.
+    </Note>
+
+    ### Rate Limits
+
+    TMDB allows **40 requests per 10 seconds**. NQ uses the official `golang-tmdb` client with auto-retry enabled — when a rate limit response is received, the client automatically waits and retries the request. No additional configuration is needed.
+
+    | Detail | Value |
+    |---|---|
+    | Rate limit | 40 requests / 10 seconds |
+    | Auto-retry | Enabled |
+    | Language support | Yes — pass a language code (e.g., `en-US`, `fr-FR`) |
+
+    <Tip>
+      TMDB supports language-specific results. When you request metadata with a language code, TMDB returns titles, overviews, and other text in that language where available.
+    </Tip>
+
+  </Accordion>
+
+</AccordionGroup>

@@ -1,0 +1,247 @@
+---
+title: "User activity"
+description: "Track your progress through any media item — watching, reading, playing, or listening — with statuses, ratings, and reviews."
+---
+
+User activity records let you track where you are with any media item. Each activity belongs to a user and a media item, and stores a status, an optional rating, an optional short review, and timestamps.
+
+## UserActivity type
+
+<ResponseField name="id" type="UUID" required>
+  Unique identifier for the activity record.
+</ResponseField>
+
+<ResponseField name="user" type="User" required>
+  The user who owns this activity.
+</ResponseField>
+
+<ResponseField name="media" type="Media" required>
+  The media item this activity is tracking.
+</ResponseField>
+
+<ResponseField name="status" type="ActivityStatus" required>
+  The current tracking status.
+  <Expandable title="ActivityStatus fields">
+    <ResponseField name="id" type="Int" required>
+      Numeric status identifier. See [Activity status IDs](#activity-status-ids).
+    </ResponseField>
+    <ResponseField name="name" type="String" required>
+      Human-readable status label.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="rating" type="Float">
+  User's rating for this media item.
+</ResponseField>
+
+<ResponseField name="review" type="String">
+  Written review.
+</ResponseField>
+
+<ResponseField name="startedAt" type="DateTime">
+  ISO 8601 datetime when the user started the media.
+</ResponseField>
+
+<ResponseField name="finishedAt" type="DateTime">
+  ISO 8601 datetime when the user finished the media.
+</ResponseField>
+
+<ResponseField name="sourcePlatform" type="Platform">
+  The platform the user watched, read, or played on (e.g., Netflix, Kindle, Steam).
+  <Expandable title="Platform fields">
+    <ResponseField name="id" type="UUID" required>
+      Unique identifier.
+    </ResponseField>
+    <ResponseField name="name" type="String" required>
+      Platform name.
+    </ResponseField>
+    <ResponseField name="baseUrl" type="String">
+      Platform website URL.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Activity status IDs
+
+Activity statuses use integer IDs. The following IDs are used throughout the app:
+
+| ID | Meaning        | Description                                         |
+| -- | -------------- | --------------------------------------------------- |
+| `1` | Want to        | Added to your list but not yet started              |
+| `2` | In progress    | Currently watching, reading, playing, or listening  |
+| `3` | Completed      | Finished                                            |
+| `4` | Dropped        | Started but stopped before finishing                |
+| `5` | On hold        | Paused temporarily                                  |
+
+
+
+---
+
+## Creating an activity
+
+Use `createActivity` to start tracking a media item. You must supply a `mediaId` and a `statusId`. All other fields are optional.
+
+<CodeGroup>
+
+```graphql Mark as want to watch
+mutation {
+  createActivity(input: {
+    mediaId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    statusId: 1
+  }) {
+    id
+    status {
+      id
+      name
+    }
+  }
+}
+```
+
+```graphql Mark as in progress
+mutation {
+  createActivity(input: {
+    mediaId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    statusId: 2
+    startedAt: "2024-06-01T20:00:00Z"
+  }) {
+    id
+    status {
+      id
+      name
+    }
+    startedAt
+  }
+}
+```
+
+```graphql Mark as completed with rating and review
+mutation {
+  createActivity(input: {
+    mediaId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    statusId: 3
+    rating: 4.5
+    review: "A beautifully crafted film. Highly recommended."
+    startedAt: "2024-06-10T19:00:00Z"
+    finishedAt: "2024-06-10T21:00:00Z"
+  }) {
+    id
+    status {
+      id
+      name
+    }
+    rating
+    review
+    finishedAt
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+## Updating an activity
+
+Use `updateActivity` to change the status, rating, review, or timestamps on an existing activity. You only need to send the fields you want to change.
+
+<CodeGroup>
+
+```graphql Add a rating after finishing
+mutation {
+  updateActivity(
+    id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+    input: {
+      statusId: 3
+      rating: 5.0
+      finishedAt: "2024-06-15T23:00:00Z"
+    }
+  ) {
+    id
+    status {
+      id
+      name
+    }
+    rating
+    finishedAt
+  }
+}
+```
+
+```graphql Add a review
+mutation {
+  updateActivity(
+    id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+    input: {
+      statusId: 3
+      review: "Even better on a rewatch."
+    }
+  ) {
+    id
+    status {
+      id
+      name
+    }
+    review
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+## Accessing activity on media
+
+Every media item has a `myActivity` field that returns the authenticated user's activity record for that item. This is useful for showing watch status inline when displaying a list of media.
+
+```graphql
+query {
+  movies(limit: 10) {
+    id
+    title
+    myActivity {
+      status {
+        id
+        name
+      }
+      rating
+      finishedAt
+    }
+  }
+}
+```
+
+---
+
+## Friends' activity feed
+
+Use `friendsActivity` to fetch recent activity from users you are friends with. This is the data source for the social feed in the app.
+
+```graphql
+query {
+  friendsActivity(limit: 20) {
+    id
+    user {
+      id
+      name
+      avatarUrl
+    }
+    media {
+      id
+      title
+      coverUrl
+    }
+    status {
+      id
+      name
+    }
+    rating
+    review
+    finishedAt
+  }
+}
+```

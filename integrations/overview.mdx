@@ -1,0 +1,124 @@
+---
+title: 'Integrations Overview'
+description: 'NQ connects to 10 external APIs to sync your media activity and enrich items with detailed metadata.'
+---
+
+NQ integrations fall into two categories:
+
+- **User data integrations** — sync your libraries, listening history, and reading lists from platforms you already use.
+- **Metadata providers** — enrich media items with additional details such as cast, genres, cover art, and ratings.
+
+## User data integrations
+
+These 7 APIs track media you are actively consuming — saved albums, owned games, saved articles, and more.
+
+<CardGroup cols={2}>
+  <Card title="Spotify" icon="music" href="/integrations/music">
+    Syncs saved albums. OAuth 2.0 client credentials.
+  </Card>
+  <Card title="Apple Music" icon="music" href="/integrations/music">
+    Catalog search and user library. JWT developer token.
+  </Card>
+  <Card title="YouTube Music" icon="play" href="/integrations/music">
+    Music videos and playlists via the YouTube Data API. Google API key.
+  </Card>
+  <Card title="Steam" icon="gamepad-2" href="/integrations/gaming">
+    Owned game library and playtime statistics. API key + user Steam ID.
+  </Card>
+  <Card title="Twitch" icon="tv" href="/integrations/gaming">
+    Top games and followed channels. OAuth 2.0 client credentials.
+  </Card>
+  <Card title="YouTube" icon="play" href="/integrations/video">
+    Video metadata and statistics. Google API key.
+  </Card>
+  <Card title="Instapaper" icon="bookmark" href="/integrations/books-articles">
+    Saved articles and reading progress. Basic auth.
+  </Card>
+</CardGroup>
+
+## Metadata providers
+
+These 3 APIs enrich media items with additional details — genres, cast, cover art, ISBN data, and more.
+
+<CardGroup cols={2}>
+  <Card title="IGDB" icon="database" href="/integrations/gaming">
+    Comprehensive game metadata. OAuth 2.0 via Twitch credentials.
+  </Card>
+  <Card title="TMDB" icon="film" href="/integrations/video">
+    Movies and TV shows. Bearer token (read access token).
+  </Card>
+  <Card title="Open Library" icon="book-open" href="/integrations/books-articles">
+    Book metadata and ISBN lookups. No credentials required.
+  </Card>
+</CardGroup>
+
+## All integrations at a glance
+
+| Integration   | Category          | Auth method                  | Env vars                                             |
+| ------------- | ----------------- | ---------------------------- | ---------------------------------------------------- |
+| Spotify       | User data         | OAuth 2.0 client credentials | `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`         |
+| Apple Music   | User data         | JWT developer token          | `APPLE_MUSIC_API_KEY`                                |
+| YouTube Music | User data         | API key                      | `YOUTUBE_API_KEY`                                    |
+| Steam         | User data         | API key + user Steam ID      | `STEAM_API_KEY`                                      |
+| Twitch        | User data         | OAuth 2.0 client credentials | `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`           |
+| YouTube       | User data         | API key                      | `YOUTUBE_API_KEY`                                    |
+| Instapaper    | User data         | Basic auth                   | `INSTAPAPER_USERNAME`, `INSTAPAPER_PASSWORD`         |
+| IGDB          | Metadata provider | OAuth 2.0 via Twitch         | `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`           |
+| TMDB          | Metadata provider | Bearer token                 | `TMDB_API_READ_ACCESS_TOKEN` _(add manually)_        |
+| Open Library  | Metadata provider | None                         | _(none required)_                                    |
+
+## General setup
+
+All credentials are loaded from a `.env` file in the `backend/` directory.
+
+<Steps>
+  <Step title="Copy the env template">
+    ```bash
+    cd backend
+    cp .envtemplate .env
+    ```
+  </Step>
+  <Step title="Fill in your credentials">
+    Open `backend/.env` and add values for the integrations you want to enable. You only need to configure the integrations you plan to use — NQ gracefully skips any integration whose credentials are missing.
+
+    ```bash
+    # Music
+    SPOTIFY_CLIENT_ID=your_value
+    SPOTIFY_CLIENT_SECRET=your_value
+    APPLE_MUSIC_API_KEY=your_jwt_token
+    YOUTUBE_API_KEY=your_value
+
+    # Gaming (TWITCH credentials also power IGDB)
+    TWITCH_CLIENT_ID=your_value
+    TWITCH_CLIENT_SECRET=your_value
+    STEAM_API_KEY=your_value
+
+    # Video (add manually — not in .envtemplate)
+    TMDB_API_READ_ACCESS_TOKEN=your_value
+
+    # Articles
+    INSTAPAPER_USERNAME=your_value
+    INSTAPAPER_PASSWORD=your_value
+
+    # Open Library requires no credentials
+    ```
+  </Step>
+  <Step title="Restart the backend">
+    ```bash
+    go run .
+    ```
+
+    The backend reads `.env` on startup. Restart it after any credential change.
+  </Step>
+</Steps>
+
+<Note>
+  Integrations whose required env vars are absent are silently skipped. The rest of the application continues to work normally — you will only see data for integrations that are fully configured.
+</Note>
+
+## Pages in this section
+
+- [Music integrations](/integrations/music) — Spotify, Apple Music, YouTube Music
+- [Gaming integrations](/integrations/gaming) — Steam, Twitch, IGDB
+- [Video integrations](/integrations/video) — YouTube Data API, TMDB
+- [Books & articles](/integrations/books-articles) — Open Library, Instapaper

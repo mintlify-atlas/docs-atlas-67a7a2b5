@@ -1,0 +1,117 @@
+{
+  "projectType": "saas",
+  "projectName": "NQ — Next in Queue",
+  "projectDescription": "A self-hosted, cross-platform media recommendation system that unifies your movies, TV, games, books, and music into a single personalized queue.",
+  "theme": "almond",
+  "primaryColor": "#94cb04",
+  "lightColor": "#545454",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/using-the-app",
+              "guides/connecting-services",
+              "guides/recommendations"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/overview",
+              "integrations/music",
+              "integrations/gaming",
+              "integrations/video",
+              "integrations/books-articles"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/environment",
+              "configuration/database",
+              "configuration/tech-stack"
+            ]
+          },
+          {
+            "group": "Help",
+            "pages": [
+              "help/faq",
+              "help/troubleshooting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "GraphQL API",
+            "pages": [
+              "api/overview",
+              "api/authentication",
+              "api/queries",
+              "api/mutations"
+            ]
+          },
+          {
+            "group": "Data Models",
+            "pages": [
+              "api/media-types",
+              "api/user-activity",
+              "api/recommendations"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Cross-platform media tracking across movies, TV, books, games, and music",
+    "Personalized 'next in queue' recommendations powered by a Neo4j graph database",
+    "10 third-party API integrations including Spotify, Steam, YouTube, and Apple Music",
+    "GraphQL API with interactive playground for querying and exploring media data",
+    "React Native mobile app for iOS and Android via Expo",
+    "Social features: friends, activity feeds, and shared recommendations",
+    "Self-hosted with full data privacy — no data leaves your infrastructure"
+  ],
+  "publicApiSurface": [
+    "query user(id: UUID!): User",
+    "query me: User",
+    "query media(id: UUID!): Media",
+    "query movies(limit, offset): [Movie!]!",
+    "query tvShows(limit, offset): [TVShow!]!",
+    "query books(limit, offset): [Book!]!",
+    "query games(limit, offset): [Game!]!",
+    "query musicAlbums(limit, offset): [MusicAlbum!]!",
+    "query autocompleteMedia(type, query): [MediaSuggestion!]!",
+    "query getRecommendations: [Recommendation!]!",
+    "query friendsActivity(limit): [UserActivity!]!",
+    "mutation createUser(input): User!",
+    "mutation rateMedia(mediaId, score): Rating!",
+    "mutation addToFavorites(mediaId): Boolean!",
+    "mutation createActivity(input): UserActivity!",
+    "mutation sendFriendRequest(toUserID): FriendRequest!",
+    "mutation acceptFriendRequest(requestID): User!",
+    "Integration: Spotify Web API (OAuth 2.0)",
+    "Integration: Steam Web API (API Key)",
+    "Integration: YouTube Data API v3 (API Key)",
+    "Integration: Twitch API / IGDB (OAuth 2.0)",
+    "Integration: Apple Music API (JWT)",
+    "Integration: Instapaper API (Basic Auth)",
+    "Integration: TMDB — movies & TV metadata (Bearer Token)",
+    "Integration: Open Library — book metadata (no auth)"
+  ]
+}

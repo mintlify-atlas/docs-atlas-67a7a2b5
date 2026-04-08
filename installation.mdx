@@ -1,0 +1,258 @@
+---
+title: "Installation"
+description: "Install Go, Node.js, and Neo4j, then configure and run the NQ backend and frontend."
+---
+
+## Prerequisites
+
+Before you install NQ, make sure you have the following:
+
+- **Go 1.19+** — powers the backend server
+- **Node.js 18+** — runs the Expo development server
+- **Neo4j** — the graph database NQ uses to store your media data (cloud or local Docker)
+
+---
+
+<Steps>
+
+<Step title="Install Go">
+
+Visit [https://go.dev/dl/](https://go.dev/dl/) and download the installer for your operating system:
+
+- **Windows** — download the `.msi` file
+- **Mac** — download the `.pkg` file
+- **Linux** — download the appropriate tarball
+
+Run the installer and accept the default options. Verify the installation:
+
+```bash
+go version
+```
+
+You should see output like `go version go1.25.1`. NQ requires **Go 1.19 or later**.
+
+</Step>
+
+<Step title="Install Node.js">
+
+Visit [https://nodejs.org/](https://nodejs.org/) and download the **LTS** (Long Term Support) version. Run the installer and accept the default options.
+
+Verify the installation:
+
+```bash
+node --version
+```
+
+You should see `v18.x.x` or higher.
+
+</Step>
+
+<Step title="Set up Neo4j">
+
+NQ stores your media graph in Neo4j. Choose the option that fits your setup:
+
+<Tabs>
+  <Tab title="Neo4j Aura (cloud)">
+
+Neo4j Aura is the easiest option — nothing installs on your computer and there is a free tier.
+
+1. Go to [https://neo4j.com/cloud/aura/](https://neo4j.com/cloud/aura/) and click **Start Free**.
+2. Create an account or sign in with Google.
+3. Click **Create Instance** and select the **Free** tier.
+4. When the credentials dialog appears, note the values for:
+   - **Connection URI** — looks like `neo4j+s://xxxxx.databases.neo4j.io`
+   - **Username** — typically `neo4j`
+   - **Password** — auto-generated
+5. Click **Download and Continue** to save the credentials to a file.
+6. Wait 1–2 minutes for the instance to start.
+
+<Note>
+  Save the credentials before closing the dialog. The password is shown only once. You will need it when configuring your `.env` file in the next step.
+</Note>
+
+Your `.env` values for Aura will be:
+
+```bash
+NEO4J_URI=neo4j+s://<instance-id>.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=<your-generated-password>
+NEO4J_DATABASE=neo4j
+```
+
+  </Tab>
+  <Tab title="Docker (local)">
+
+NQ ships a `docker-compose.yml` in the `backend/` directory that runs a local Neo4j instance.
+
+**Requirement:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) must be installed and running.
+
+From the root of the cloned repository, start the container:
+
+```bash
+docker compose -f backend/docker-compose.yml up -d
+```
+
+This starts Neo4j with:
+- **Browser UI** at [http://localhost:7474](http://localhost:7474)
+- **Bolt port** on `7687`
+- **Credentials** `neo4j` / `testpass`
+
+Your `.env` values for the local Docker instance will be:
+
+```bash
+NEO4J_URI=neo4j://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=testpass
+NEO4J_DATABASE=neo4j
+```
+
+To stop the container while keeping your data:
+
+```bash
+docker compose -f backend/docker-compose.yml stop
+```
+
+To stop and delete all stored data:
+
+```bash
+docker compose -f backend/docker-compose.yml down -v
+```
+
+  </Tab>
+</Tabs>
+
+</Step>
+
+<Step title="Configure the backend">
+
+Navigate to the `backend/` directory and copy the environment template:
+
+<CodeGroup>
+
+```bash Mac / Linux
+cd backend
+cp .envtemplate .env
+```
+
+```cmd Windows
+cd backend
+copy .envtemplate .env
+```
+
+</CodeGroup>
+
+Open `.env` in a text editor and fill in your Neo4j credentials:
+
+```bash
+NEO4J_URI=
+NEO4J_USERNAME=
+NEO4J_PASSWORD=
+NEO4J_DATABASE=
+```
+
+Leave the API key fields (`SPOTIFY_CLIENT_ID`, `STEAM_API_KEY`, etc.) blank for now — you can add them later as you connect individual services.
+
+<Note>
+  Set `PORT=` to override the default port of `8080` if something else is already using it — for example, `PORT=8081`.
+</Note>
+
+</Step>
+
+<Step title="Start the backend">
+
+From the `backend/` directory, run:
+
+```bash
+go run .
+```
+
+After a moment you should see:
+
+```
+connect to http://localhost:8080/ for GraphQL playground
+WARNING: TLS is disabled. Set ENABLE_TLS=true for production
+```
+
+Open [http://localhost:8080](http://localhost:8080) in your browser. You should see the **GraphQL Playground**.
+
+**Common errors:**
+
+| Error | Fix |
+|---|---|
+| `Failed to connect to database` | Check `NEO4J_URI`, `NEO4J_USERNAME`, and `NEO4J_PASSWORD` in `.env`. For Aura, verify the instance is running at [console.neo4j.io](https://console.neo4j.io). |
+| `address already in use` on port 8080 | Close the other process or set `PORT=8081` in `.env`. |
+| `command not found: go` | Reinstall Go from [go.dev/dl](https://go.dev/dl/) and restart your terminal. |
+
+</Step>
+
+<Step title="Set up the frontend">
+
+Open a **new** terminal window. Navigate to the `frontend/` directory and install dependencies:
+
+```bash
+cd frontend
+npm install
+```
+
+This downloads all required packages. The first install may take a few minutes.
+
+Start the Expo development server:
+
+```bash
+npx expo start
+```
+
+Metro Bundler will start and show a QR code along with an interactive menu.
+
+</Step>
+
+<Step title="Open the app">
+
+Choose how you want to run the NQ app:
+
+<Tabs>
+  <Tab title="Expo Go (phone)">
+
+1. Install the **Expo Go** app on your phone from the App Store or Google Play (free).
+2. Open Expo Go and scan the QR code shown in your terminal.
+3. Wait for the app to bundle — the first load takes about a minute.
+
+Your phone must be on the same Wi-Fi network as your computer.
+
+  </Tab>
+  <Tab title="Android emulator">
+
+1. Install [Android Studio](https://developer.android.com/studio) and set up an Android Virtual Device (AVD).
+2. Start the emulator from Android Studio.
+3. In the Expo terminal, press `a`.
+
+  </Tab>
+  <Tab title="iOS simulator (Mac only)">
+
+1. Install Xcode from the Mac App Store.
+2. In the Expo terminal, press `i`.
+
+  </Tab>
+</Tabs>
+
+</Step>
+
+</Steps>
+
+## Verification
+
+To confirm everything is working, you need **both** the backend and frontend running at the same time:
+
+- **Terminal 1** — backend: `cd backend && go run .`
+- **Terminal 2** — frontend: `cd frontend && npx expo start`
+
+<Note>
+  Keep both terminal windows open while using NQ. Closing either one will stop that part of the system.
+</Note>
+
+With both running:
+
+1. Open [http://localhost:8080](http://localhost:8080) in a browser — you should see the **GraphQL Playground**.
+2. Open the app on your phone or emulator — it should load the NQ interface without connection errors.
+
+NQ is now installed and running. Continue to [Quick start](/quickstart) to connect a service and see your first recommendation.

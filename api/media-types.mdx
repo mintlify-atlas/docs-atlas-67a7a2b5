@@ -1,0 +1,407 @@
+---
+title: "Media types"
+description: "The Media interface and all five concrete types: Movie, TVShow, Book, Game, and MusicAlbum."
+---
+
+All media in NQ implements a shared `Media` interface. Each concrete type adds its own type-specific fields on top of the shared set. When querying `media` or `allMedia`, use inline fragments (`... on Movie`) to access type-specific fields.
+
+## MediaType enum
+
+The `MediaType` enum identifies which kind of media you are working with. It is used as an argument in `autocompleteMedia`.
+
+| Value   | Description  |
+| ------- | ------------ |
+| `MOVIE` | Feature film |
+| `TV`    | TV show      |
+| `BOOK`  | Book         |
+| `GAME`  | Video game   |
+| `MUSIC` | Music album  |
+
+---
+
+## Media interface
+
+All five concrete types implement these shared fields.
+
+<ResponseField name="id" type="UUID" required>
+  Unique identifier for the media item.
+</ResponseField>
+
+<ResponseField name="title" type="String" required>
+  The media title.
+</ResponseField>
+
+<ResponseField name="releaseDate" type="Date">
+  Release, publication, or air date.
+</ResponseField>
+
+<ResponseField name="description" type="String">
+  Plot summary, synopsis, or description.
+</ResponseField>
+
+<ResponseField name="coverUrl" type="String">
+  URL of the poster, cover art, or thumbnail image.
+</ResponseField>
+
+<ResponseField name="creators" type="[Creator!]!" required>
+  People or entities credited as the primary creators.
+  <Expandable title="Creator fields">
+    <ResponseField name="id" type="UUID" required>
+      Unique identifier.
+    </ResponseField>
+    <ResponseField name="name" type="String" required>
+      Creator's name.
+    </ResponseField>
+    <ResponseField name="role" type="CreatorRole" required>
+      The creator's role.
+      <Expandable title="CreatorRole fields">
+        <ResponseField name="id" type="Int" required>
+          Role identifier.
+        </ResponseField>
+        <ResponseField name="name" type="String" required>
+          Role name (e.g., `"Director"`, `"Author"`).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="platforms" type="[Platform!]!" required>
+  Platforms where the media is available.
+  <Expandable title="Platform fields">
+    <ResponseField name="id" type="UUID" required>
+      Unique identifier.
+    </ResponseField>
+    <ResponseField name="name" type="String" required>
+      Platform name (e.g., `"Netflix"`, `"Steam"`).
+    </ResponseField>
+    <ResponseField name="baseUrl" type="String">
+      Base URL of the platform's website.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="tags" type="[Tag!]!" required>
+  Tags associated with the media item.
+  <Expandable title="Tag fields">
+    <ResponseField name="id" type="UUID" required>
+      Unique identifier.
+    </ResponseField>
+    <ResponseField name="name" type="String" required>
+      Tag label.
+    </ResponseField>
+    <ResponseField name="type" type="String" required>
+      Tag category (e.g., `"genre"`, `"theme"`).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="ratings" type="[Rating!]!" required>
+  All user ratings for this media item.
+  <Expandable title="Rating fields">
+    <ResponseField name="user" type="User" required>
+      The user who submitted the rating.
+    </ResponseField>
+    <ResponseField name="score" type="Float" required>
+      Rating score between 0 and 5.
+    </ResponseField>
+    <ResponseField name="ratedAt" type="DateTime" required>
+      Timestamp when the rating was submitted.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="averageRating" type="Float">
+  The mean of all user rating scores for this item.
+</ResponseField>
+
+<ResponseField name="searchDepth" type="Int" required>
+  The depth at which this item was discovered during a recursive search. `0` means it was directly added by a user; higher values indicate it was found as a connection of another item.
+</ResponseField>
+
+<ResponseField name="myActivity" type="UserActivity">
+  The authenticated user's activity record for this media item, if one exists. `null` if the user has not tracked this item.
+</ResponseField>
+
+<ResponseField name="relatedMedia" type="[Media!]!" required>
+  Other media items connected to this one through shared cast, crew, creators, or other relationships.
+
+  **Arguments:**
+  - `limit` (Int) — maximum number of related items to return.
+</ResponseField>
+
+---
+
+## Movie
+
+All `Media` interface fields, plus:
+
+<ResponseField name="runtime" type="Int">
+  Runtime in minutes.
+</ResponseField>
+
+<ResponseField name="budget" type="Int">
+  Production budget in USD.
+</ResponseField>
+
+<ResponseField name="boxOffice" type="Int">
+  Worldwide box office gross in USD.
+</ResponseField>
+
+<ResponseField name="cast" type="[Person!]!" required>
+  Actors who appeared in the film.
+</ResponseField>
+
+<ResponseField name="crew" type="[Person!]!" required>
+  Crew members who worked on the film.
+</ResponseField>
+
+<ResponseField name="castCredits" type="[PersonCredit!]!" required>
+  Structured cast credits with character names and billing order.
+  <Expandable title="PersonCredit fields">
+    <ResponseField name="person" type="Person" required>
+      The person.
+    </ResponseField>
+    <ResponseField name="name" type="String" required>
+      The person's name as credited.
+    </ResponseField>
+    <ResponseField name="character" type="String">
+      Character name played.
+    </ResponseField>
+    <ResponseField name="order" type="Int">
+      Billing order (lower numbers appear first in credits).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="crewCredits" type="[CrewCredit!]!" required>
+  Structured crew credits with job title and department.
+  <Expandable title="CrewCredit fields">
+    <ResponseField name="person" type="Person" required>
+      The person.
+    </ResponseField>
+    <ResponseField name="name" type="String" required>
+      The person's name as credited.
+    </ResponseField>
+    <ResponseField name="job" type="String">
+      Job title (e.g., `"Director"`, `"Director of Photography"`).
+    </ResponseField>
+    <ResponseField name="department" type="String">
+      Department (e.g., `"Directing"`, `"Camera"`).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="productionCompanies" type="[ProductionCompany!]!" required>
+  Companies that produced the film.
+  <Expandable title="ProductionCompany fields">
+    <ResponseField name="id" type="UUID" required>
+      Unique identifier.
+    </ResponseField>
+    <ResponseField name="name" type="String" required>
+      Company name.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="genres" type="[Genre!]!" required>
+  Genres associated with the film.
+  <Expandable title="Genre fields">
+    <ResponseField name="id" type="UUID" required>
+      Unique identifier.
+    </ResponseField>
+    <ResponseField name="name" type="String" required>
+      Genre name (e.g., `"Drama"`, `"Science Fiction"`).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="productionCountries" type="[ProductionCountry!]!" required>
+  Countries where the film was produced.
+  <Expandable title="ProductionCountry fields">
+    <ResponseField name="id" type="UUID" required>
+      Unique identifier.
+    </ResponseField>
+    <ResponseField name="name" type="String" required>
+      Country name.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## TVShow
+
+All `Media` interface fields, plus:
+
+<ResponseField name="seasons" type="Int">
+  Total number of seasons.
+</ResponseField>
+
+<ResponseField name="episodes" type="Int">
+  Total number of episodes across all seasons.
+</ResponseField>
+
+<ResponseField name="status" type="String">
+  Current airing status: `"Ongoing"`, `"Ended"`, or `"Cancelled"`.
+</ResponseField>
+
+<ResponseField name="cast" type="[Person!]!" required>
+  Actors who appeared in the show.
+</ResponseField>
+
+<ResponseField name="crew" type="[Person!]!" required>
+  Crew members who worked on the show.
+</ResponseField>
+
+<ResponseField name="castCredits" type="[PersonCredit!]!" required>
+  Structured cast credits with character names.
+</ResponseField>
+
+<ResponseField name="crewCredits" type="[CrewCredit!]!" required>
+  Structured crew credits with job titles and departments.
+</ResponseField>
+
+<ResponseField name="productionCompanies" type="[ProductionCompany!]!" required>
+  Companies that produced the show.
+</ResponseField>
+
+<ResponseField name="genres" type="[Genre!]!" required>
+  Genres associated with the show.
+</ResponseField>
+
+<ResponseField name="productionCountries" type="[ProductionCountry!]!" required>
+  Countries where the show was produced.
+</ResponseField>
+
+---
+
+## Book
+
+All `Media` interface fields, plus:
+
+<ResponseField name="authors" type="[Creator!]!" required>
+  Authors of the book (alias of `creators` for books).
+</ResponseField>
+
+<ResponseField name="subjects" type="[Tag!]!" required>
+  Subject tags for the book (e.g., `"Science"`, `"Biography"`).
+</ResponseField>
+
+<ResponseField name="publishers" type="[String!]!" required>
+  List of publisher names.
+</ResponseField>
+
+<ResponseField name="pages" type="Int">
+  Number of pages.
+</ResponseField>
+
+<ResponseField name="isbn" type="String">
+  ISBN-10 or ISBN-13 identifier.
+</ResponseField>
+
+<ResponseField name="publisher" type="String">
+  Primary publisher name.
+</ResponseField>
+
+---
+
+## Game
+
+All `Media` interface fields, plus:
+
+<ResponseField name="genre" type="[String!]!" required>
+  List of genre names.
+</ResponseField>
+
+<ResponseField name="themes" type="[String!]!" required>
+  Thematic tags (e.g., `"Action"`, `"Fantasy"`).
+</ResponseField>
+
+<ResponseField name="keywords" type="[String!]!" required>
+  Keyword tags associated with the game.
+</ResponseField>
+
+<ResponseField name="gameModes" type="[String!]!" required>
+  Supported game modes (e.g., `"Single player"`, `"Multiplayer"`).
+</ResponseField>
+
+<ResponseField name="perspectives" type="[String!]!" required>
+  Player perspectives (e.g., `"First person"`, `"Third person"`).
+</ResponseField>
+
+<ResponseField name="franchises" type="[String!]!" required>
+  Franchise or series names.
+</ResponseField>
+
+<ResponseField name="platformsList" type="[String!]!" required>
+  Platform names the game is available on.
+</ResponseField>
+
+<ResponseField name="esrbRating" type="String">
+  ESRB rating (e.g., `"E"`, `"T"`, `"M"`).
+</ResponseField>
+
+<ResponseField name="multiplayer" type="Boolean">
+  Whether the game supports multiplayer.
+</ResponseField>
+
+---
+
+## MusicAlbum
+
+All `Media` interface fields, plus:
+
+<ResponseField name="trackCount" type="Int">
+  Number of tracks on the album.
+</ResponseField>
+
+<ResponseField name="duration" type="Int">
+  Total album duration in seconds.
+</ResponseField>
+
+<ResponseField name="label" type="String">
+  Record label name.
+</ResponseField>
+
+---
+
+## Supporting types
+
+### Person
+
+<ResponseField name="id" type="UUID" required>
+  Unique identifier.
+</ResponseField>
+
+<ResponseField name="name" type="String" required>
+  Person's full name.
+</ResponseField>
+
+<ResponseField name="externalID" type="String">
+  Identifier from an external source (e.g., TMDB person ID).
+</ResponseField>
+
+### MediaSuggestion
+
+Returned by `autocompleteMedia` when searching external sources before a media item has been added to the database.
+
+<ResponseField name="title" type="String" required>
+  The media title.
+</ResponseField>
+
+<ResponseField name="year" type="Int">
+  Release year.
+</ResponseField>
+
+<ResponseField name="externalId" type="String">
+  External source identifier (e.g., TMDB ID). Pass this to a create mutation to link the item to external metadata.
+</ResponseField>
+
+<ResponseField name="imageUrl" type="String">
+  Thumbnail or poster image URL from the external source.
+</ResponseField>
+
+<ResponseField name="subtitle" type="String">
+  Secondary descriptor, such as the author name for books.
+</ResponseField>

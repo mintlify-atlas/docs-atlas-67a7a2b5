@@ -1,0 +1,160 @@
+---
+title: 'Gaming Integrations'
+description: 'Connect Steam, Twitch, and IGDB to sync your game library, playtime, and enriched game metadata into NQ.'
+---
+
+NQ supports three gaming integrations. Steam and Twitch are user data integrations that sync your activity; IGDB is a metadata provider that enriches game entries with detailed information.
+
+<Note>
+  IGDB is owned by Twitch and authenticates using Twitch OAuth credentials. If you have already configured Twitch, you can reuse the same Client ID and Client Secret for IGDB — or register a separate Twitch application dedicated to IGDB access.
+</Note>
+
+<AccordionGroup>
+
+  <Accordion title="Steam">
+
+    Steam syncs your owned game library using the Steam Web API and Steam Store API.
+
+    **Data synced:**
+    - Owned games (title, App ID)
+    - Playtime statistics (total minutes played across all platforms)
+    - Game descriptions, genres, developers, publishers
+    - Release dates
+    - Cover images and icons
+
+    **Authentication:** API key (server-side) plus a Steam ID per user. The API key is a global server credential; each user must also provide their own 64-bit Steam ID so NQ can fetch their personal library.
+
+    ### Getting credentials
+
+    **API key:**
+
+    <Steps>
+      <Step title="Go to the Steam Web API Key page">
+        Visit [https://steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey) and sign in with your Steam account.
+      </Step>
+      <Step title="Register a key">
+        Enter a domain name for your application and click **Register**. Copy the generated API key.
+      </Step>
+    </Steps>
+
+    **Steam ID:**
+
+    Each user must provide their own 64-bit Steam ID. This can be found on their Steam profile page URL or via a tool such as [SteamID.io](https://steamid.io/).
+
+    ### Environment variables
+
+    ```bash
+    STEAM_API_KEY=your_api_key
+    ```
+
+    <Note>
+      The Steam ID is a per-user value passed at authentication time. It is not stored in `.env`.
+    </Note>
+
+    ### Rate limits
+
+    NQ implements delays between requests when fetching detailed game information. Game library data is fetched from the Steam Web API (`api.steampowered.com`), and per-game details are fetched separately from the Steam Store API (`store.steampowered.com/api/appdetails`).
+
+  </Accordion>
+
+  <Accordion title="Twitch">
+
+    The Twitch integration surfaces top games and can expose followed channel data when user-level OAuth is available.
+
+    **Data synced:**
+    - Top 20 games currently trending on Twitch (title, box art)
+    - Followed channels (requires user OAuth — not yet implemented)
+
+    **Authentication:** OAuth 2.0 client credentials flow. App access tokens last approximately 60 days. NQ automatically refreshes tokens at the 55-day mark to avoid expiry.
+
+    ### Getting credentials
+
+    <Steps>
+      <Step title="Open the Twitch Developer Console">
+        Go to [https://dev.twitch.tv/console](https://dev.twitch.tv/console) and sign in with your Twitch account.
+      </Step>
+      <Step title="Register a new application">
+        Click **Register Your Application**. Set the OAuth redirect URL to `http://localhost` if you do not need a redirect for the client credentials flow.
+      </Step>
+      <Step title="Copy your credentials">
+        From the application's **Manage** page, copy the **Client ID**. Generate and copy the **Client Secret**.
+      </Step>
+    </Steps>
+
+    ### Environment variables
+
+    ```bash
+    TWITCH_CLIENT_ID=your_client_id
+    TWITCH_CLIENT_SECRET=your_client_secret
+    ```
+
+    ### Token management
+
+    | Detail                     | Value                       |
+    | -------------------------- | --------------------------- |
+    | Token lifetime             | ~60 days                    |
+    | Automatic refresh at       | 55 days                     |
+    | Token type                 | App access token            |
+
+    <Note>
+      Most user-specific Twitch endpoints (followed channels, watch history) require a user-level OAuth token obtained through a full authorization code flow. These endpoints are not yet implemented. The current integration fetches publicly available data using the app access token.
+    </Note>
+
+  </Accordion>
+
+  <Accordion title="IGDB (Internet Game Database)">
+
+    IGDB is a comprehensive game metadata database used to enrich game entries with detailed information. It is a metadata provider — it does not sync user activity.
+
+    **Data provided:**
+    - Game details (title, summary, release dates)
+    - Genres, themes, keywords
+    - Game modes, player perspectives
+    - Franchises, platforms
+    - Cover artwork (high-resolution, `t_cover_big_2x`)
+    - Developer and publisher information
+
+    **Authentication:** OAuth 2.0 via Twitch. Because Twitch acquired IGDB, authentication goes through the Twitch OAuth endpoint (`id.twitch.tv/oauth2/token`). You use Twitch application credentials to obtain a bearer token for IGDB API requests.
+
+    ### Getting credentials
+
+    IGDB uses Twitch credentials. You can reuse an existing Twitch application or create a dedicated one:
+
+    <Steps>
+      <Step title="Open the Twitch Developer Console">
+        Go to [https://dev.twitch.tv/console](https://dev.twitch.tv/console) and sign in.
+      </Step>
+      <Step title="Register or select an application">
+        Register a new application, or use an existing one. The same application can serve both the Twitch integration and IGDB.
+      </Step>
+      <Step title="Copy your credentials">
+        Copy the **Client ID** and **Client Secret** from the application's manage page.
+      </Step>
+    </Steps>
+
+    ### Environment variables
+
+    IGDB uses the same Twitch credentials you already have:
+
+    ```bash
+    TWITCH_CLIENT_ID=your_twitch_client_id
+    TWITCH_CLIENT_SECRET=your_twitch_client_secret
+    ```
+
+    <Note>
+      No separate IGDB env vars are needed. NQ uses `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` to authenticate with the IGDB API, since Twitch owns IGDB.
+    </Note>
+
+    ### Rate limits
+
+    | Limit                            | Value     |
+    | -------------------------------- | --------- |
+    | Maximum requests per second      | 4 req/s   |
+    | Minimum interval between requests| 300 ms    |
+    | Response cache duration          | 10 minutes |
+
+    NQ enforces a 300 ms minimum interval between IGDB requests and caches responses for 10 minutes to reduce API calls. When a rate limit response (`429`) is received, NQ backs off for 1 second and retries the request once. Access tokens are refreshed automatically when they expire.
+
+  </Accordion>
+
+</AccordionGroup>

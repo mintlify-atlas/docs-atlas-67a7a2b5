@@ -1,0 +1,106 @@
+---
+title: "Authentication"
+description: "NQ uses JWT bearer tokens issued by Auth0. Pass your token in the Authorization header on every authenticated request."
+---
+
+NQ authenticates requests using JSON Web Tokens (JWTs). The backend validates tokens against Auth0's JWKS endpoint. Requests without a token are still accepted for public queries, but operations that require an authenticated user — such as `me`, `createActivity`, and all social mutations — will return an error if no valid token is present.
+
+## Getting a token
+
+The NQ mobile app authenticates through Auth0. When a user signs in, Auth0 returns an access token. The backend automatically creates or looks up the user's NQ account on the first authenticated request using the token's subject claim (`sub`).
+
+You do not call `createUser` manually when using the app — user creation happens automatically during the first authenticated request. The `createUser` mutation exists for programmatic or administrative use.
+
+## Passing the token
+
+Include the token in every request using the `Authorization` header:
+
+```
+Authorization: Bearer <your-access-token>
+```
+
+<CodeGroup>
+
+```graphql Query with auth header (playground)
+# In the playground's "Headers" tab, add:
+# {
+#   "Authorization": "Bearer <your-access-token>"
+# }
+
+query {
+  me {
+    id
+    name
+    email
+    avatarUrl
+  }
+}
+```
+
+```json HTTP request with token
+{
+  "method": "POST",
+  "url": "http://localhost:8080",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <your-access-token>"
+  },
+  "body": {
+    "query": "query { me { id name email } }"
+  }
+}
+```
+
+</CodeGroup>
+
+## The `me` query
+
+Once you have a token, use the `me` query to retrieve the currently authenticated user:
+
+```graphql
+query {
+  me {
+    id
+    name
+    email
+    avatarUrl
+    activities {
+      id
+      status {
+        id
+        name
+      }
+    }
+    recommendations {
+      id
+      score
+      media {
+        id
+        title
+      }
+    }
+  }
+}
+```
+
+If the token is missing or invalid, `me` returns `null`. If the token is present but malformed, the server returns HTTP 401.
+
+## Token storage
+
+Store access tokens securely. The NQ mobile app uses `expo-secure-store` to persist tokens in the device's secure enclave, keeping them out of AsyncStorage and away from JavaScript-accessible memory.
+
+<Warning>
+  Never store tokens in plain AsyncStorage, localStorage, or environment variables checked into source control.
+</Warning>
+
+## Using the playground
+
+1. Open `http://localhost:8080` in your browser while the backend is running.
+2. Click the **Headers** tab at the bottom of the left panel.
+3. Add your token:
+   ```json
+   {
+     "Authorization": "Bearer <your-access-token>"
+   }
+   ```
+4. Run any authenticated query or mutation.

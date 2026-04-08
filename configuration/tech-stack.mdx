@@ -1,0 +1,163 @@
+---
+title: "Tech stack"
+description: "The technologies behind NQ: Go backend, React Native mobile app, Neo4j graph database, and GraphQL API."
+---
+
+NQ is a monorepo containing a Go backend and a React Native (Expo) frontend, connected by a GraphQL API and backed by a Neo4j graph database.
+
+---
+
+## Backend
+
+### Language and framework
+
+| Technology | Version | Role |
+|---|---|---|
+| Go | 1.25.1+ | Primary backend language |
+| gqlgen (`99designs/gqlgen`) | 0.17.78 | GraphQL server and code generator |
+| `vektah/gqlparser` | 2.5.30 | GraphQL query parsing |
+
+The backend exposes a single GraphQL endpoint at `/` (port `8080`). All data operations — syncing integrations, fetching recommendations, managing user preferences — go through this endpoint.
+
+### Database
+
+| Technology | Role |
+|---|---|
+| Neo4j | Graph database for storing media items, users, creators, and their relationships |
+| `neo4j/neo4j-go-driver/v5` (5.28.3) | Official Go driver for Neo4j |
+
+Neo4j supports both the cloud-hosted [Aura](https://neo4j.com/cloud/aura/) service and local Docker deployments. See [Database Setup](/configuration/database) for setup instructions.
+
+### Key backend libraries
+
+| Package | Version | Purpose |
+|---|---|---|
+| `golang-jwt/jwt/v5` | 5.3.1 | JWT creation and validation |
+| `lestrrat-go/jwx/v2` | 2.1.6 | JWKS-based JWT verification (Auth0) |
+| `joho/godotenv` | 1.5.1 | Loading `.env` files at startup |
+| `google/uuid` | 1.6.0 | UUID generation for node IDs |
+| `cyruzin/golang-tmdb` | 1.9.2 | TMDB movie and TV metadata API client |
+| `hashicorp/golang-lru/v2` | 2.0.7 | In-memory LRU caching |
+| `golang.org/x/time` | 0.14.0 | Rate limiting utilities |
+| `golang.org/x/text` | 0.34.0 | Unicode text processing |
+| `gorilla/websocket` | 1.5.0 | WebSocket support for GraphQL subscriptions |
+
+---
+
+## Frontend
+
+### Language and framework
+
+| Technology | Version | Role |
+|---|---|---|
+| TypeScript | ~5.9.3 | Strongly-typed language |
+| React Native | 0.81.5 | Cross-platform mobile framework |
+| React | 19.1.0 | UI component library |
+| Expo SDK | ~54.0.33 | Development platform and build tooling |
+| Expo Router | ~6.0.23 | File-based routing for React Native |
+
+### Data and state
+
+| Package | Version | Purpose |
+|---|---|---|
+| `@apollo/client` | ^4.1.4 | GraphQL client — queries, mutations, caching |
+| `graphql` | ^16.12.0 | GraphQL query language support |
+| `@react-native-async-storage/async-storage` | ^2.2.0 | Persistent local storage |
+| `apollo3-cache-persist` | ^0.15.0 | Persisting Apollo cache across app restarts |
+
+### UI and navigation
+
+| Package | Version | Purpose |
+|---|---|---|
+| `@react-navigation/native` | ^7.1.8 | Core navigation library |
+| `@react-navigation/bottom-tabs` | ^7.4.0 | Bottom tab navigator |
+| `@expo/vector-icons` | ^15.0.3 | Icon library |
+| `react-native-svg` | 15.12.1 | SVG rendering |
+| `react-native-gesture-handler` | ~2.28.0 | Touch gesture handling |
+| `react-native-reanimated` | ~4.1.1 | Smooth animations |
+| `react-native-modal` | ^14.0.0-rc.1 | Modal overlay component |
+| `expo-linear-gradient` | ^15.0.8 | Gradient backgrounds |
+| `expo-blur` | ~15.0.8 | Blur effects |
+| `expo-image` | ~3.0.11 | Optimized image component |
+
+### Authentication and storage
+
+| Package | Version | Purpose |
+|---|---|---|
+| `expo-auth-session` | ^7.0.10 | OAuth authentication flows |
+| `expo-secure-store` | ^15.0.8 | Encrypted credential storage on device |
+| `expo-web-browser` | ~15.0.10 | In-app browser for OAuth redirects |
+| `expo-linking` | ~8.0.11 | Deep link handling |
+
+### Development and build tooling (frontend)
+
+| Tool | Version | Purpose |
+|---|---|---|
+| ESLint | ^9.25.0 | Linting (Airbnb + Expo config) |
+| Prettier | ^3.8.1 | Code formatting |
+| TypeScript compiler | ~5.9.3 | Type checking (`npx tsc --noEmit`) |
+| Jest + jest-expo | ^29.7.0 / ^54.0.17 | Unit testing |
+| `@graphql-codegen/cli` | ^6.2.1 | Generates typed GraphQL operations from schema |
+
+---
+
+## External API integrations
+
+NQ connects to 10 external services. See [Integrations Overview](/integrations/overview) for full details.
+
+| Service | Category | Auth method |
+|---|---|---|
+| Spotify | Music | OAuth 2.0 Client Credentials |
+| Apple Music | Music | JWT developer token |
+| YouTube Music | Music | API key |
+| Steam | Gaming | API key |
+| Twitch | Gaming / streaming | OAuth 2.0 Client Credentials |
+| YouTube | Video | API key |
+| TMDB | Video metadata | Bearer token |
+| IGDB | Game metadata | OAuth 2.0 via Twitch |
+| Instapaper | Articles | Basic auth |
+| Open Library | Book metadata | None required |
+
+---
+
+## Architecture
+
+### Monorepo structure
+
+```
+nq/
+├── backend/      # Go application (GraphQL API + Neo4j)
+├── frontend/     # React Native (Expo) application
+├── wiki/         # Project documentation
+└── scripts/      # Repository-level utilities
+```
+
+### Data flow
+
+1. The **frontend** (React Native) sends GraphQL queries and mutations to the **backend** at `http://localhost:8080`.
+2. The **backend** resolves queries by reading from and writing to **Neo4j**.
+3. Integration syncs call external APIs (Spotify, Steam, etc.) and write the results into Neo4j nodes and relationships.
+4. Recommendation queries traverse the graph to find media items with strong relationships to the user's consumption history.
+
+### Design principles
+
+- **Single GraphQL endpoint** — all client-server communication goes through one API, making it easy to introspect and test via the built-in GraphQL Playground at `http://localhost:8080`.
+- **Graph database** — Neo4j is chosen because recommendations are inherently a graph problem: finding paths and patterns through networks of users, media, creators, and tags.
+- **Mobile-first** — the primary interface is a React Native app that runs on both iOS and Android via Expo.
+- **Graceful degradation** — integrations with missing or invalid credentials are skipped silently; the rest of the system continues to function.
+
+---
+
+## Development tooling (backend)
+
+| Tool | Command | Purpose |
+|---|---|---|
+| `go build` | `go build .` | Compile the backend |
+| `go run` | `go run .` | Build and start the server |
+| `go test` | `go test ./...` | Run all tests |
+| `go fmt` | `go fmt ./...` | Format code |
+| `go vet` | `go vet ./...` | Static analysis |
+
+<Tip>
+  Run `go build .` after making changes to confirm there are no compilation errors before running the full test suite.
+</Tip>
